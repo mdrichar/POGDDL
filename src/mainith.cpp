@@ -153,8 +153,8 @@ void assignGame(int gameid, bool& alwaysCheckPayoffs, string& domainString, stri
 		alwaysCheckPayoffs = false;
 		break;
 	case 24: 
-		domainString = "games/EndSelection.siigl";
-		problemString = "games/e1.siigl";
+		domainString = "../domains/EndGame.pog";
+		problemString = "../problems/EndGame/endgame-1.pog";
 		//problemString = "games/Battleship/battleship5-10.siigl";
 		//problemString = "games/Battleship/battleship1-3.siigl";
 		alwaysCheckPayoffs = false;

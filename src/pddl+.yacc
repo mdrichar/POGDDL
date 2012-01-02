@@ -231,7 +231,7 @@ using namespace VAL;
        DERIVED_PREDICATES TIMED_INITIAL_LITERALS PREFERENCES CONSTRAINTS
        ACTION PROCESS EVENT DURATIVE_ACTION DERIVED
        CONSTANTS PREDS FUNCTIONS TYPES ARGS PRE CONDITION PREFERENCE 
-       START_PRE END_PRE SIIGL /* Redundant */
+       START_PRE END_PRE POGDDL /* Redundant */
        EFFECTS 
        INITIAL_EFFECT FINAL_EFFECT INVARIANT DURATION /* Redundant */
        AT_START AT_END OVER_ALL
@@ -595,7 +595,7 @@ c_effect :
 |   c_cond_effect       {$$=new effect_lists; $$->cond_effects.push_front($1);}
 |   c_forall_effect     {$$=new effect_lists; $$->forall_effects.push_front($1);}
 |   c_observation	{$$=new effect_lists; $$->observation_effects.push_front($1);
-	 requires(E_SIIGL);}
+	 requires(E_POGDDL);}
 ;
 
 c_a_effect :
@@ -613,7 +613,7 @@ c_p_effect :
          requires(E_FLUENTS);}
 |   c_observation	
 	{$$=new effect_lists; $$->observation_effects.push_front($1);
-	 requires(E_SIIGL);}
+	 requires(E_POGDDL);}
 ;
 
 
@@ -623,7 +623,7 @@ c_p_effects :
 |   c_p_effects c_assignment        {$$= $1; $$->assign_effects.push_back($2);
                                      requires(E_FLUENTS); }
 |   c_p_effects c_observation	    {$$= $1; $$->observation_effects.push_back($2);
-	 requires(E_SIIGL);}
+	 requires(E_POGDDL);}
 |   /* empty */  { $$= new effect_lists; }
 ;
 
@@ -1186,7 +1186,7 @@ c_structure_def :
 |   c_durative_action_def { $$= $1; requires(E_DURATIVE_ACTIONS); }
 |   c_derivation_rule     { $$= $1; requires(E_DERIVED_PREDICATES);}
 |   c_gain_def		  { $$= $1; current_analysis->var_tab_stack.push(
-        	current_analysis->buildGainTab());requires(E_SIIGL);} // The buildGainTab doesn't really go here, but I'm not sure where it SHOULD go. yacc won't let me put it after GAIN in c_gain_def where I thought it should go.
+        	current_analysis->buildGainTab());requires(E_POGDDL);} // The buildGainTab doesn't really go here, but I'm not sure where it SHOULD go. yacc won't let me put it after GAIN in c_gain_def where I thought it should go.
 ;
 
 c_gain_def :
@@ -1195,14 +1195,14 @@ c_gain_def :
 	c_typed_var_list
  	c_f_exp	
 	c_goal_descriptor
-	CLOSE_BRAC	{ $$ = new gain_def($4, $3, current_analysis->var_tab_stack.pop(), $5); requires(E_SIIGL); }
+	CLOSE_BRAC	{ $$ = new gain_def($4, $3, current_analysis->var_tab_stack.pop(), $5); requires(E_POGDDL); }
 ;
 
 c_observation :
 	OPEN_BRAC
 	OBSERVE
 	c_recipients
-	CLOSE_BRAC { $$ = new observation($3); requires(E_SIIGL);}
+	CLOSE_BRAC { $$ = new observation($3); requires(E_POGDDL);}
 ;
 
 c_rule_head :
@@ -1383,8 +1383,8 @@ c_require_key :
    | NAME
       {log_error(E_WARNING,"Unrecognised requirements declaration ");
        $$= 0; delete [] $1;}
-   | SIIGL
-	{ $$ = E_SIIGL;}
+   | POGDDL
+	{ $$ = E_POGDDL;}
 ;
 
 

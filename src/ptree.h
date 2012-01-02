@@ -272,7 +272,7 @@ enum pddl_req_attr { E_EQUALITY              =    1,
 		     E_TIMED_INITIAL_LITERALS= 16384,
 		     E_PREFERENCES           = 32768,
 		     E_CONSTRAINTS           = 65536,
-		     E_SIIGL		     = 131072
+		     E_POGDDL			     = 131072
 		     
 // Attributes which are defined as combinations of others 
 // are expanded by parser, and don't need to be included here.
@@ -1523,7 +1523,7 @@ public:
 };
 
 
-// SIIGL types
+// POGDDL types
 class gain_def : public structure_def
 {
 protected:

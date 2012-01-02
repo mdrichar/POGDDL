@@ -34,7 +34,7 @@ extern int yydebug;
 
 void usage()
 {
-	cout << "SIIGL: Stochastic and Imperfect Information Game Language\n"
+	cout << "pog: Stochastic and Imperfect Information Game Language\n"
              << "Usage: validate domainFile problemFile messageFile\n";
 
 };
@@ -46,117 +46,117 @@ void assignGame(int gameid, bool& alwaysCheckPayoffs, string& domainString, stri
 {
   switch (gameid) {
 	case 1: 
-		domainString = "games/Racko.siigl";
-		//problemString = "games/r3-9.siigl";
-		problemString = "games/Racko/racko5-20.siigl";
-		//problemString = "games/Racko/racko10-60.siigl";
-		//problemString = "games/Racko/racko5-40.siigl";
+		domainString = "games/Racko.pog";
+		//problemString = "games/r3-9.pog";
+		problemString = "games/Racko/racko5-20.pog";
+		//problemString = "games/Racko/racko10-60.pog";
+		//problemString = "games/Racko/racko5-40.pog";
 		alwaysCheckPayoffs = true;
 		break;
 	case 2: 
-		domainString = "games/GoFish.siigl";
-		problemString = "games/gf1.siigl";
+		domainString = "games/GoFish.pog";
+		problemString = "games/gf1.pog";
 		break;
 	case 3: 
-		domainString = "games/Clue.siigl";
-		problemString = "games/c1.siigl";
+		domainString = "games/Clue.pog";
+		problemString = "games/c1.pog";
 		break;
 	case 4: 
-		domainString = "games/Stratego.siigl";
-		problemString = "games/s1.siigl";
+		domainString = "games/Stratego.pog";
+		problemString = "games/s1.pog";
 		break;
 	case 5: 
-		domainString = "games/Scrabble.siigl";
-		problemString = "games/a1.siigl";
+		domainString = "games/Scrabble.pog";
+		problemString = "games/a1.pog";
 		break;
 	case 6: 
-		domainString = "games/Simplest.siigl";
-		problemString = "games/simp1.siigl";
+		domainString = "games/Simplest.pog";
+		problemString = "games/simp1.pog";
 		break;
 	case 7: 
-		domainString = "games/Game2.siigl";
-		problemString = "games/Game2p.siigl";
+		domainString = "games/Game2.pog";
+		problemString = "games/Game2p.pog";
 		break;
 	case 8: 
-		domainString = "games/Game3.siigl";
-		problemString = "games/Game3p.siigl";
+		domainString = "games/Game3.pog";
+		problemString = "games/Game3p.pog";
 		break;
 	case 9: 
-		domainString = "games/Game4.siigl";
-		problemString = "games/Game4p.siigl";
+		domainString = "games/Game4.pog";
+		problemString = "games/Game4p.pog";
 		break;
 	case 10: 
-		domainString = "games/Game5.siigl";
-		problemString = "games/Game5p.siigl";
+		domainString = "games/Game5.pog";
+		problemString = "games/Game5p.pog";
 		break;
 	case 11: 
-		domainString = "games/Game6.siigl";
-		problemString = "games/Game6p.siigl";
+		domainString = "games/Game6.pog";
+		problemString = "games/Game6p.pog";
 		break;
 	case 12: 
-		domainString = "games/Game7.siigl";
-		problemString = "games/Game7p.siigl";
+		domainString = "games/Game7.pog";
+		problemString = "games/Game7p.pog";
 		break;
 	case 13: 
-		domainString = "games/Digram.siigl";
-		problemString = "games/dr.siigl";
+		domainString = "games/Digram.pog";
+		problemString = "games/dr.pog";
 		break;
 	case 14: 
-		domainString = "games/Matching.siigl";
-		problemString = "games/m1.siigl";
+		domainString = "games/Matching.pog";
+		problemString = "games/m1.pog";
 		alwaysCheckPayoffs = false;
 		break;
 	case 15: 
-		domainString = "games/Yahtzee.siigl";
-		problemString = "games/y1.siigl";
+		domainString = "games/Yahtzee.pog";
+		problemString = "games/y1.pog";
 		break;
 	case 16: 
-		domainString = "games/Gops.siigl";
-		problemString = "games/g1.siigl";
+		domainString = "games/Gops.pog";
+		problemString = "games/g1.pog";
 		break;
 	case 17: 
-		domainString = "games/Kriegspiel.siigl";
-		problemString = "games/k1.siigl";
+		domainString = "games/Kriegspiel.pog";
+		problemString = "games/k1.pog";
 		break;
 	case 18: 
-		domainString = "games/Territory.siigl";
-		problemString = "games/terr3.siigl";
+		domainString = "games/Territory.pog";
+		problemString = "games/terr3.pog";
 		break;
 	case 19: 
-		domainString = "games/Mastermind.siigl";
-		problemString = "games/mast1.siigl";
+		domainString = "games/Mastermind.pog";
+		problemString = "games/mast1.pog";
 		break;
 	case 20: 
-		domainString = "games/Battleship.siigl";
-		problemString = "games/b1.siigl";
+		domainString = "games/Battleship.pog";
+		problemString = "games/b1.pog";
 		alwaysCheckPayoffs = true;
 		break;
 	case 21: 
-		domainString = "games/LongBattleship.siigl";
-		problemString = "games/Battleship/battleship2-6.siigl";
-		//problemString = "games/Battleship/battleship5-10.siigl";
-		//problemString = "games/Battleship/battleship1-3.siigl";
+		domainString = "games/LongBattleship.pog";
+		problemString = "games/Battleship/battleship2-6.pog";
+		//problemString = "games/Battleship/battleship5-10.pog";
+		//problemString = "games/Battleship/battleship1-3.pog";
 		alwaysCheckPayoffs = true;
 		break;
 	case 22: 
-		domainString = "games/ShortLatentTicTacToe.siigl";
-		problemString = "games/t1.siigl";
-		//problemString = "games/Battleship/battleship5-10.siigl";
-		//problemString = "games/Battleship/battleship1-3.siigl";
+		domainString = "games/ShortLatentTicTacToe.pog";
+		problemString = "games/t1.pog";
+		//problemString = "games/Battleship/battleship5-10.pog";
+		//problemString = "games/Battleship/battleship1-3.pog";
 		alwaysCheckPayoffs = true;
 		break;
 	case 23: 
-		domainString = "games/Unimind.siigl";
-		problemString = "games/unimind3.siigl";
-		//problemString = "games/Battleship/battleship5-10.siigl";
-		//problemString = "games/Battleship/battleship1-3.siigl";
+		domainString = "games/Unimind.pog";
+		problemString = "games/unimind3.pog";
+		//problemString = "games/Battleship/battleship5-10.pog";
+		//problemString = "games/Battleship/battleship1-3.pog";
 		alwaysCheckPayoffs = false;
 		break;
 	case 24: 
 		domainString = "../domains/EndGame.pog";
 		problemString = "../problems/EndGame/endgame-1.pog";
-		//problemString = "games/Battleship/battleship5-10.siigl";
-		//problemString = "games/Battleship/battleship1-3.siigl";
+		//problemString = "games/Battleship/battleship5-10.pog";
+		//problemString = "games/Battleship/battleship1-3.pog";
 		alwaysCheckPayoffs = false;
 		break;
 	default:
@@ -246,8 +246,8 @@ int main(int argc,char * argv[])
   MPI_Comm_size(MPI_COMM_WORLD,&size);
   cout << "Myrank: " << rank << std::endl;
 #endif
-        string domainString = "games/Clue.siigl";
-        string problemString = "games/c1.siigl";
+        string domainString = "games/Clue.pog";
+        string problemString = "games/c1.pog";
         int game = 0;
         int nMoves = 6;
         int nGames = 1;

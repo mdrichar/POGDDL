@@ -1,0 +1,137 @@
+(define (domain gops)
+(:requirements :strips :typing :siigl :fluents)
+(:types card slot role phase other)
+(:constants
+	dealing announcing bidding determining - phase
+	chance p1 p2 - role
+	b01 dealer - slot
+	all others u - other)
+	
+(:predicates
+	(at ?c - card ?s - slot)
+	(first ?p - role)
+	(owns ?p - role ?s - slot)
+	(lastdeal ?s - slot)
+	(lastbid ?s - slot)
+	(whoseturn ?p - role)
+	(inphase ?p - phase)
+	(bidby1 ?c - card)
+	(bidby2 ?c - card)
+	(oppof ?r ?o - role)
+	(same ?c1 ?c2 - card)
+  	(current ?s - slot)
+	(next ?s2 ?s1 - slot)
+
+)
+
+(:functions
+	(score ?p - role)
+	(value ?c - card)
+)
+
+(:action deal
+	:parameters (?c - card ?d ?n - slot ?p - role)
+	:precondition (and
+			(whoseturn chance)
+			(inphase dealing)
+			(at ?c dealer)
+			(owns ?p ?d)
+			(current ?d)
+			(next ?n ?d))
+	:effect (and
+			(observe (?p (deal ?c ?d ?n ?p))
+				(others (deal u ?d ?n ?p)))
+			(not (at ?c dealer))
+			(at ?c ?d)
+			(not (current ?d))
+			(current ?n)
+			(when (lastdeal ?d)
+				(and
+					(not (inphase dealing))
+					(inphase announcing)
+					(current b01)))))
+
+(:action announce
+	:parameters (?c - card ?s - slot)
+	:precondition (and
+			(inphase announcing)
+			(whoseturn chance)
+			(at ?c ?s)
+			(current ?s))
+	:effect (and
+			(not (inphase announcing))
+			(inphase bidding)
+			(not (whoseturn chance))
+			(whoseturn p1)
+			(observe (all (announce ?c ?s)))))
+
+(:action bid1
+	:parameters (?c - card ?s - slot)
+	:precondition (and
+			(inphase bidding)
+			(whoseturn p1)
+			(owns p1 ?s)
+			(at ?c ?s))
+	:effect (and
+			(not (whoseturn p1))
+			(observe (p1 (bid1 ?c ?s))
+				(p2 (bid1 u ?s)))
+			(whoseturn p2)
+			(not (at ?c ?s))
+			(bidby1 ?c)))
+
+(:action bid2
+	:parameters (?c - card ?s - slot)
+	:precondition (and
+			(inphase bidding)
+			(whoseturn p2)
+			(owns p2 ?s)
+			(at ?c ?s))
+	:effect (and
+			(not (whoseturn p2))
+			(whoseturn chance)
+			(not (inphase bidding))
+			(inphase determining)
+			(observe (p2 (bid2 ?c ?s))
+				(p1 (bid2 u ?s)))
+			(not (at ?c ?s))
+			(bidby2 ?c)))
+
+(:action determine
+	:parameters (?c1 ?c2 ?b - card ?s1 ?s2 - slot)
+	:precondition (and
+			(whoseturn chance)
+			(inphase determining)
+			(current ?s1)
+			(next ?s2 ?s1)
+			(bidby1 ?c1)
+			(bidby2 ?c2)
+			(at ?b ?s1))
+	:effect (and
+			(not (inphase determining))
+			(inphase announcing)
+			(not (current ?s1))
+			(not (bidby1 ?c1))
+			(not (bidby2 ?c2))
+			(when (not (lastbid ?s1))
+				(current ?s2))
+			(when (> (value ?c1) (value ?c2))
+				(and
+					(increase (score p1) (value ?b))
+					(observe (all (player1wins ?c1 ?c2 ?b ?s1 ?s2)))))
+			(when (< (value ?c1) (value ?c2))
+				(and
+					(increase (score p2) (value ?b))
+					(observe (all (player2wins ?c1 ?c2 ?b ?s1 ?s2)))))))
+				
+
+(:gain ?p - role 1
+	(or
+		(and
+			(first ?p)
+			(> (score p1) (score p2)))
+		(and
+			(not (first ?p))
+			(> (score p2) (score p1))))
+)
+)

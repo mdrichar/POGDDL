@@ -1,0 +1,201 @@
+(define (domain racko)
+(:requirements :strips :typing :siigl :derived-predicates)
+(:types card slot role phase)
+(:constants
+	dealer - slot
+	chance p1 p2 - role
+	dealing dealtop randomdraw choosesrc drew - phase
+	all others u - other)
+	
+(:predicates
+	(at ?c - card ?s - slot)
+	(drawn ?d ?cd - card)
+	(drawing ?p - role)
+	(nextdeal ?s1 ?s2 - slot)
+	(lastdeal ?s - slot)
+	(current ?s - slot)
+	(currentdrawn ?c - card)
+	(inphase ?p - phase)
+	(owns ?p - role ?s - slot)
+	(same ?c1 ?c2 - card)
+	(successor-c ?c2 ?c1 - card)
+	(successor-s ?s2 ?s1 - slot)
+	(succeeds-s ?s3 ?s1 - slot)
+	(succeeds-c ?c3 ?c1 - card)
+	(top ?c - card)
+	(whoseturn ?r - role)
+	(oppof ?r ?other - role)
+
+)
+
+(:derived (succeeds-s ?s3 ?s1 - slot)
+	(or (successor-s ?s3 ?s1)
+	    (exists (?s2 - slot)
+		    (and 
+			(successor-s ?s3 ?s2)
+			(succeeds-s ?s2 ?s1)))))
+
+(:derived (succeeds-c ?c3 ?c1 - card)
+	(or (successor-c ?c3 ?c1)
+	    (exists (?c2 - card)
+		    (and 
+			(successor-c ?c3 ?c2)
+			(succeeds-c ?c2 ?c1)))))
+
+(:action deal
+	:parameters (?dest ?next - slot ?p - role ?c - card)
+	:precondition (and
+			(inphase dealing)
+			(whoseturn chance)
+			(nextdeal ?next ?dest)
+			(owns ?p ?dest)
+			(current ?dest)
+			(at ?c dealer))
+	:effect	(and
+			(when (lastdeal ?dest) 
+				(and 
+					(not (inphase dealing))
+					(inphase dealtop)))
+			(not (at ?c dealer))
+			(at ?c ?dest)
+			(not (current ?dest))
+			(current ?next)
+			(observe (?p (dealt ?dest ?c))
+				(others (dealt ?dest u)))))
+
+(:action init-top
+	:parameters (?c - card)
+	:precondition (and
+			(inphase dealtop)
+			(whoseturn chance)
+			(at ?c dealer))
+	:effect (and
+			(not (at ?c dealer))
+			(top ?c)
+			(not (whoseturn chance))
+			(not (inphase dealtop))
+			(inphase choosesrc)
+			(whoseturn p1)
+			(observe (all (firsttop ?c)))
+	))
+
+
+(:action choose-draw
+	:parameters (?p - role)
+	:precondition (and
+			(inphase choosesrc)
+			(whoseturn ?p))
+	:effect		(and
+				(not (inphase choosesrc))
+				(not (whoseturn ?p))
+				(whoseturn chance)
+				(drawing ?p)
+				(inphase randomdraw)
+				(observe (all (randomlydrawing)))
+			))
+
+(:action random-draw
+	:parameters (?p - role ?t ?c ?cd - card)
+	:precondition (and
+			(inphase randomdraw)
+			(whoseturn chance)
+			(currentdrawn ?cd)
+			(drawing ?p)
+			(top ?t)
+			(at ?c dealer))
+	:effect	    	(and
+				(not (inphase randomdraw))
+				(inphase drew)
+				(not (drawing ?p))
+				(not (whoseturn chance))
+				(whoseturn ?p)
+				(drawn ?c ?cd)
+				(not (at ?c dealer))
+				(not (top ?t))
+				(observe (?p (drawncard ?c))
+					(others (drawncard u)))
+))
+
+(:action pass
+	:parameters (?p ?o - role ?d ?cd ?cdn - card)
+	:precondition (and
+			(whoseturn ?p)
+			(oppof ?o ?p)
+			(currentdrawn ?cd)
+			(successor-c ?cdn ?cd)
+			(drawn ?d ?cd)
+			(inphase drew))
+	:effect		(and
+				(not (whoseturn ?p))
+				(whoseturn ?o)
+				(not (currentdrawn ?cd))
+				(currentdrawn ?cdn)
+				(not (inphase drew))
+				(inphase choosesrc)
+				(not (drawn ?d ?cd))
+				(top ?d)
+				(observe (all (newtop ?d)))))
+
+(:action swap-top
+	:parameters (?p ?o - role ?t - card ?s - slot ?c - card)
+	:precondition (and
+			(inphase choosesrc)
+			(whoseturn ?p)
+			(oppof ?o ?p)
+			(not (same ?t ?c))
+			(top ?t)
+			(owns ?p ?s)
+			(at ?c ?s))
+	:effect		(and
+				(not (whoseturn ?p))
+				(whoseturn ?o)
+				(not (top ?t))
+				(not (at ?c ?s))
+				(top ?c)
+				(at ?t ?s)
+				(observe (all (swapt ?c ?t ?s)))
+				))
+
+(:action swap-drawn
+	:parameters (?p ?o - role ?s - slot ?c ?d ?cd ?cdn - card)
+	:precondition (and
+			(inphase drew)
+			(whoseturn ?p)
+			(successor-c ?cdn ?cd)
+			(currentdrawn ?cd)
+			(drawn ?d ?cd)
+			(oppof ?o ?p)
+			(not (same ?c ?d))
+			(owns ?p ?s)
+			(at ?c ?s))
+	:effect		(and
+				(not (whoseturn ?p))
+				(whoseturn ?o)
+				(not (currentdrawn ?cd))
+				(currentdrawn ?cdn)
+				(not (inphase drew))
+				(inphase choosesrc)
+				(not (drawn ?d ?cd))
+				(not (at ?c ?s))
+				(top ?c)
+				(at ?d ?s)
+				(observe (?p (swapd ?d ?c ?s))
+					(others (swapd u ?c ?s)))
+				))
+
+
+(:gain ?p - role 1
+	(and
+		(not (inphase dealing))
+		(not 
+			(exists (?s1 ?s2 - slot ?c1 ?c2 - card)
+				(and
+					(owns ?p ?s1)
+					(successor-s ?s2 ?s1)
+					(at ?c1 ?s1)
+					(at ?c2 ?s2)
+					(not (succeeds-c ?c2 ?c1)))))))
+
+)
+
+

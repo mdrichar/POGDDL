@@ -1,0 +1,483 @@
+(define (domain battleship)
+(:requirements :strips :typing :siigl :derived-predicates :fluents)
+(:types col phase position role row ship)
+(:constants
+	chance p1 p2 - role		
+	placing shooting - phase
+	all others u - other)
+	
+(:predicates
+	(at ?p - role ?s - ship ?c - col ?r - row)	; encodes ship location
+	(guessed ?p - role ?c - col ?r - row)		; all queried cells 
+	(lastshot ?p - role ?c - col ?r - row)		; all queried cells 
+	(occupied ?p - role ?c - col ?r - row)	; no overlapping ships 
+	(current ?p - role ?s - ship)	     		; to sequence placement 
+	(inphase ?p - phase)
+	(last ?p - role ?s - ship)	     		; "
+	(next ?p1 ?p2 - role ?s1 ?s2 - ship) 		; "
+	(adjacentc ?c1 ?c2 - col)			; restrict placement
+	(adjacentr ?r1 ?r2 - row)			; restrict placement
+	(whoseturn ?p - role)
+	(opponent ?r ?o - role)
+	(pending ?p - role)
+	(size2 ?s - ship)
+	(size3 ?s - ship)
+	(size4 ?s - ship)
+	(size5 ?s - ship)
+
+)
+
+(:functions
+	(shipssunk ?p - role)			; # of opponent's ships sunk
+	(nhits  ?p - role ?s - ship)		; number of hits per ship
+	(maxhits ?s - ship)			; # hits to sink each ship
+	(needtosink)				; # of ships needed to sink to win
+)
+
+; Action for placing a ship.  Players alternate placing
+; ships (in a fixed order) until all 10 ships are placed
+; Ships are placed in a straight line and may not overlap
+; ?pc - role to place current ship
+; ?pn - role to place next ship
+; ?s1 - type of ship to place now
+; ?s2 - type of ship to place next
+; ?d - across or down
+; ?c1-?c5 names of cells that ship will occupy
+
+(:action place-across-two
+	:parameters (?pc ?pn - role ?s1 ?s2 - ship 
+          ?r - row ?c1 ?c2 - col)
+	:precondition (and
+			(whoseturn ?pc)
+			(inphase placing)
+			(current ?pc ?s1)
+			; for determining next ships to be placed
+			(next ?pc ?pn ?s1 ?s2)
+			; make sure ship is right length
+			(size2 ?s1)
+
+			; no overlapping ships
+			(not (occupied ?pc ?c1 ?r))
+			(not (occupied ?pc ?c2 ?r))
+
+			; cells must be in same row or column
+			(adjacentc ?c1 ?c2))
+
+	:effect	(and
+			(not (whoseturn ?pc))
+			(whoseturn ?pn)
+			(not (current ?pc ?s1))
+			; set next ship to be placed
+			(current ?pn ?s2)
+			; prevent future ships here
+			(occupied ?pc ?c1 ?r) 
+			(occupied ?pc ?c2 ?r)
+			; records location of ship for shooting phase
+			(at ?pc ?s1 ?c1 ?r)   
+			(at ?pc ?s1 ?c2 ?r)
+			(when (last ?pc ?s1) ; 
+				(and
+					(not (inphase placing))
+					(inphase shooting)))
+			; Opponent does NOT observe location
+			(observe (?pc (placed2a ?pc ?pn ?s1 ?s2 
+                                       ?r ?c1 ?c2 ))
+				 (?pn (placed2s ?pc ?pn ?s1 ?s2))))) ; 
+
+
+(:action place-across-three
+	:parameters (?pc ?pn - role ?s1 ?s2 - ship 
+          ?r - row ?c1 ?c2 ?c3 - col)
+	:precondition (and
+			(whoseturn ?pc)
+			(inphase placing)
+			(current ?pc ?s1)
+			; for determining next ships to be placed
+			(next ?pc ?pn ?s1 ?s2)
+			; make sure ship is right length
+			(size3 ?s1)
+
+			; no overlapping ships
+			(not (occupied ?pc ?c1 ?r))
+			(not (occupied ?pc ?c2 ?r))
+			(not (occupied ?pc ?c3 ?r))
+
+			; cells must be in same row or column
+			(adjacentc ?c1 ?c2)
+			(adjacentc ?c2 ?c3))
+
+	:effect	(and
+			(not (whoseturn ?pc))
+			(whoseturn ?pn)
+			(not (current ?pc ?s1))
+			; set next ship to be placed
+			(current ?pn ?s2)
+			; prevent future ships here
+			(occupied ?pc ?c1 ?r) 
+			(occupied ?pc ?c2 ?r)
+			(occupied ?pc ?c3 ?r)
+			; records location of ship for shooting phase
+			(at ?pc ?s1 ?c1 ?r)   
+			(at ?pc ?s1 ?c2 ?r)
+			(at ?pc ?s1 ?c3 ?r)
+			(when (last ?pc ?s1) ; 
+				(and
+					(not (inphase placing))
+					(inphase shooting)))
+			; Opponent does NOT observe location
+			(observe (?pc (placed3a ?pc ?pn ?s1 ?s2 
+                                       ?r ?c1 ?c2 ?c3 ))
+				 (?pn (placed3s ?pc ?pn ?s1 ?s2))))) ; 
+
+(:action place-across-four
+	:parameters (?pc ?pn - role ?s1 ?s2 - ship 
+          ?r - row ?c1 ?c2 ?c3 ?c4 - col)
+	:precondition (and
+			(whoseturn ?pc)
+			(inphase placing)
+			(current ?pc ?s1)
+			; for determining next ships to be placed
+			(next ?pc ?pn ?s1 ?s2)
+			; make sure ship is right length
+			(size4 ?s1)
+
+			; no overlapping ships
+			(not (occupied ?pc ?c1 ?r))
+			(not (occupied ?pc ?c2 ?r))
+			(not (occupied ?pc ?c3 ?r))
+			(not (occupied ?pc ?c4 ?r))
+
+			; cells must be in same row or column
+			(adjacentc ?c1 ?c2)
+			(adjacentc ?c2 ?c3)
+			(adjacentc ?c3 ?c4))
+
+	:effect	(and
+			(not (whoseturn ?pc))
+			(whoseturn ?pn)
+			(not (current ?pc ?s1))
+			; set next ship to be placed
+			(current ?pn ?s2)
+			; prevent future ships here
+			(occupied ?pc ?c1 ?r) 
+			(occupied ?pc ?c2 ?r)
+			(occupied ?pc ?c3 ?r)
+			(occupied ?pc ?c4 ?r)
+			; records location of ship for shooting phase
+			(at ?pc ?s1 ?c1 ?r)   
+			(at ?pc ?s1 ?c2 ?r)
+			(at ?pc ?s1 ?c3 ?r)
+			(at ?pc ?s1 ?c4 ?r)
+			(when (last ?pc ?s1) ; 
+				(and
+					(not (inphase placing))
+					(inphase shooting)))
+			; Opponent does NOT observe location
+			(observe (?pc (placed4a ?pc ?pn ?s1 ?s2 
+                                       ?r ?c1 ?c2 ?c3 ?c4 ))
+				 (?pn (placed4s ?pc ?pn ?s1 ?s2))))) ; 
+
+(:action place-across-five
+	:parameters (?pc ?pn - role ?s1 ?s2 - ship 
+          ?r - row ?c1 ?c2 ?c3 ?c4 ?c5 - col)
+	:precondition (and
+			(whoseturn ?pc)
+			(inphase placing)
+			(current ?pc ?s1)
+			; for determining next ships to be placed
+			(next ?pc ?pn ?s1 ?s2)
+			; make sure ship is right length
+			(size5 ?s1)
+
+			; no overlapping ships
+			(not (occupied ?pc ?c1 ?r))
+			(not (occupied ?pc ?c2 ?r))
+			(not (occupied ?pc ?c3 ?r))
+			(not (occupied ?pc ?c4 ?r))
+			(not (occupied ?pc ?c5 ?r))
+
+			; cells must be in same row or column
+			(adjacentc ?c1 ?c2)
+			(adjacentc ?c2 ?c3)
+			(adjacentc ?c3 ?c4)
+			(adjacentc ?c4 ?c5))
+
+	:effect	(and
+			(not (whoseturn ?pc))
+			(whoseturn ?pn)
+			(not (current ?pc ?s1))
+			; set next ship to be placed
+			(current ?pn ?s2)
+			; prevent future ships here
+			(occupied ?pc ?c1 ?r) 
+			(occupied ?pc ?c2 ?r)
+			(occupied ?pc ?c3 ?r)
+			(occupied ?pc ?c4 ?r)
+			(occupied ?pc ?c5 ?r)
+			; records location of ship for shooting phase
+			(at ?pc ?s1 ?c1 ?r)   
+			(at ?pc ?s1 ?c2 ?r)
+			(at ?pc ?s1 ?c3 ?r)
+			(at ?pc ?s1 ?c4 ?r)
+			(at ?pc ?s1 ?c5 ?r)
+			(when (last ?pc ?s1) ; 
+				(and
+					(not (inphase placing))
+					(inphase shooting)))
+			; Opponent does NOT observe location
+			(observe (?pc (placed5a ?pc ?pn ?s1 ?s2 
+                                       ?r ?c1 ?c2 ?c3 ?c4 ?c5))
+				 (?pn (placed5s ?pc ?pn ?s1 ?s2))))) ; 
+
+
+
+(:action place-down-two
+	:parameters (?pc ?pn - role ?s1 ?s2 - ship 
+          ?c - col ?r1 ?r2 - row)
+	:precondition (and
+			(whoseturn ?pc)
+			(inphase placing)
+			(current ?pc ?s1)
+			; for determining next ships to be placed
+			(next ?pc ?pn ?s1 ?s2)
+			(size2 ?s1)
+
+			; no overlapping ships
+			(not (occupied ?pc ?c ?r1))
+			(not (occupied ?pc ?c ?r2))
+
+			; cells must be in same row or column
+			(adjacentr ?r1 ?r2))
+	:effect	(and
+			(not (whoseturn ?pc))
+			(whoseturn ?pn)
+			(not (current ?pc ?s1))
+			; set next ship to be placed
+			(current ?pn ?s2)
+			; prevent future ships here
+			(occupied ?pc ?c ?r1) 
+			(occupied ?pc ?c ?r2)
+			; records location of ship for shooting phase
+			(at ?pc ?s1 ?c ?r1)   
+			(at ?pc ?s1 ?c ?r2)
+			(when (last ?pc ?s1) ; 
+				(and
+					(not (inphase placing))
+					(inphase shooting)))
+			; Opponent does NOT observe location
+			(observe (?pc (placed2d ?pc ?pn ?s1 ?s2 
+                                       ?c ?r1 ?r2))
+				 (?pn (placed2s ?pc ?pn ?s1 ?s2))))) ; 
+
+(:action place-down-three
+	:parameters (?pc ?pn - role ?s1 ?s2 - ship 
+          ?c - col ?r1 ?r2 ?r3 - row)
+	:precondition (and
+			(whoseturn ?pc)
+			(inphase placing)
+			(current ?pc ?s1)
+			; for determining next ships to be placed
+			(next ?pc ?pn ?s1 ?s2)
+			(size3 ?s1)
+
+			; no overlapping ships
+			(not (occupied ?pc ?c ?r1))
+			(not (occupied ?pc ?c ?r2))
+			(not (occupied ?pc ?c ?r3))
+
+			; cells must be in same row or column
+			(adjacentr ?r1 ?r2)
+			(adjacentr ?r2 ?r3))
+	:effect	(and
+			(not (whoseturn ?pc))
+			(whoseturn ?pn)
+			(not (current ?pc ?s1))
+			; set next ship to be placed
+			(current ?pn ?s2)
+			; prevent future ships here
+			(occupied ?pc ?c ?r1) 
+			(occupied ?pc ?c ?r2)
+			(occupied ?pc ?c ?r3)
+			; records location of ship for shooting phase
+			(at ?pc ?s1 ?c ?r1)   
+			(at ?pc ?s1 ?c ?r2)
+			(at ?pc ?s1 ?c ?r3)
+			(when (last ?pc ?s1) ; 
+				(and
+					(not (inphase placing))
+					(inphase shooting)))
+			; Opponent does NOT observe location
+			(observe (?pc (placed3d ?pc ?pn ?s1 ?s2 
+                                       ?c ?r1 ?r2 ?r3))
+				 (?pn (placed3s ?pc ?pn ?s1 ?s2))))) ; 
+
+(:action place-down-four
+	:parameters (?pc ?pn - role ?s1 ?s2 - ship 
+          ?c - col ?r1 ?r2 ?r3 ?r4 - row)
+	:precondition (and
+			(whoseturn ?pc)
+			(inphase placing)
+			(current ?pc ?s1)
+			; for determining next ships to be placed
+			(next ?pc ?pn ?s1 ?s2)
+			(size4 ?s1)
+
+			; no overlapping ships
+			(not (occupied ?pc ?c ?r1))
+			(not (occupied ?pc ?c ?r2))
+			(not (occupied ?pc ?c ?r3))
+			(not (occupied ?pc ?c ?r4))
+
+			; cells must be in same row or column
+			(adjacentr ?r1 ?r2)
+			(adjacentr ?r2 ?r3)
+			(adjacentr ?r3 ?r4))
+	:effect	(and
+			(not (whoseturn ?pc))
+			(whoseturn ?pn)
+			(not (current ?pc ?s1))
+			; set next ship to be placed
+			(current ?pn ?s2)
+			; prevent future ships here
+			(occupied ?pc ?c ?r1) 
+			(occupied ?pc ?c ?r2)
+			(occupied ?pc ?c ?r3)
+			(occupied ?pc ?c ?r4)
+			; records location of ship for shooting phase
+			(at ?pc ?s1 ?c ?r1)   
+			(at ?pc ?s1 ?c ?r2)
+			(at ?pc ?s1 ?c ?r3)
+			(at ?pc ?s1 ?c ?r4)
+			(when (last ?pc ?s1) ; 
+				(and
+					(not (inphase placing))
+					(inphase shooting)))
+			; Opponent does NOT observe location
+			(observe (?pc (placed4d ?pc ?pn ?s1 ?s2 
+                                       ?c ?r1 ?r2 ?r3 ?r4))
+				 (?pn (placed4s ?pc ?pn ?s1 ?s2))))) ; 
+
+(:action place-down-five
+	:parameters (?pc ?pn - role ?s1 ?s2 - ship 
+          ?c - col ?r1 ?r2 ?r3 ?r4 ?r5 - row)
+	:precondition (and
+			(whoseturn ?pc)
+			(inphase placing)
+			(current ?pc ?s1)
+			; for determining next ships to be placed
+			(next ?pc ?pn ?s1 ?s2)
+			(size5 ?s1)
+
+			; no overlapping ships
+			(not (occupied ?pc ?c ?r1))
+			(not (occupied ?pc ?c ?r2))
+			(not (occupied ?pc ?c ?r3))
+			(not (occupied ?pc ?c ?r4))
+			(not (occupied ?pc ?c ?r5))
+
+			; cells must be in same row or column
+			(adjacentr ?r1 ?r2)
+			(adjacentr ?r2 ?r3)
+			(adjacentr ?r3 ?r4)
+			(adjacentr ?r4 ?r5))
+	:effect	(and
+			(not (whoseturn ?pc))
+			(whoseturn ?pn)
+			(not (current ?pc ?s1))
+			; set next ship to be placed
+			(current ?pn ?s2)
+			; prevent future ships here
+			(occupied ?pc ?c ?r1) 
+			(occupied ?pc ?c ?r2)
+			(occupied ?pc ?c ?r3)
+			(occupied ?pc ?c ?r4)
+			(occupied ?pc ?c ?r5)
+			; records location of ship for shooting phase
+			(at ?pc ?s1 ?c ?r1)   
+			(at ?pc ?s1 ?c ?r2)
+			(at ?pc ?s1 ?c ?r3)
+			(at ?pc ?s1 ?c ?r4)
+			(at ?pc ?s1 ?c ?r5)
+			(when (last ?pc ?s1) ; 
+				(and
+					(not (inphase placing))
+					(inphase shooting)))
+			; Opponent does NOT observe location
+			(observe (?pc (placed5d ?pc ?pn ?s1 ?s2 
+                                       ?c ?r1 ?r2 ?r3 ?r4 ?r5))
+				 (?pn (placed5s ?pc ?pn ?s1 ?s2))))) ; 
+
+; Players alternate 'firing' at a single cell
+; Different observations for misses and hits
+; Both players 'receive' the same message 
+(:action shoot 
+	:parameters (?p ?o - role ?c - col ?r - row) 
+	:precondition (and
+			(inphase shooting)
+			(whoseturn ?p)
+			(opponent ?p ?o)
+			(not (guessed ?p ?c ?r)))
+	:effect (and
+			(not (whoseturn ?p))
+			(whoseturn chance)
+			(pending ?o)
+			(observe (all (shotat ?p ?c ?r)))
+			(guessed ?p ?c ?r);
+			(lastshot ?p ?c ?r))) ; Can't guess same cell twice 
+
+(:action declare-miss
+	:parameters (?p ?o - role ?c - col ?r - row)
+	:precondition (and
+			(whoseturn chance)
+			(opponent ?p ?o)
+			(pending ?o)
+			(lastshot ?p ?c ?r)
+			(not (occupied ?o ?c ?r)))
+	:effect (and
+			(not (whoseturn chance))
+			(not (pending ?o))
+			(not (lastshot ?p ?c ?r))
+			(whoseturn ?o)
+			(observe (all (missed ?p ?c ?r)))))
+			
+(:action declare-hit
+	:parameters (?p ?o - role ?c - col ?r - row ?s - ship)
+	:precondition (and
+			(whoseturn chance)
+			(opponent ?p ?o)
+			(pending ?o)
+			(lastshot ?p ?c ?r)
+			(at ?o ?s ?c ?r)		
+			(occupied ?o ?c ?r)
+			(< (nhits ?o ?s) (maxhits ?s)))
+	:effect (and
+			(not (whoseturn chance))
+			(not (pending ?o))
+			(not (lastshot ?p ?c ?r))
+			(whoseturn ?o)
+			(increase (nhits ?o ?s) 1)
+			(observe (all (hit ?p ?s)))))
+			
+(:action declare-sunk
+	:parameters (?p ?o - role ?c - col ?r - row ?s - ship)
+	:precondition (and
+			(whoseturn chance)
+			(opponent ?p ?o)
+			(pending ?o)
+			(lastshot ?p ?c ?r)
+			(at ?o ?s ?c ?r)		
+			(occupied ?o ?c ?r)
+			(= (nhits ?o ?s) (maxhits ?s)))
+	:effect (and
+			(not (whoseturn chance))
+			(not (pending ?o))
+			(not (lastshot ?p ?c ?r))
+			(whoseturn ?o)
+			(increase (shipssunk ?p) 1)
+			(observe (all (sunk ?p ?s)))))
+			
+; A player wins when all five of the opponent's ships are sunk
+(:gain ?p - role 1
+	(= (shipssunk ?p) (needtosink))
+)
+)

@@ -1,0 +1,117 @@
+(:define (domain coins)
+(:requirements :strips :typing :fluents :siigl
+(:types role coin phase choice outcome
+(:constants
+	chance p1 p2 - role
+	fair heady - coin
+	firstflip finalflip - phase
+	yes no - choice
+)
+
+(:predicates
+	(holds ?p - role ?c - coin)
+	(inphase ?p - phase))
+	(whoseturn ?p - role)
+	(swapped ?s - choice)
+	(opponent ?p ?o - role)
+	(isheads ?c - coin ?x - outcome)	
+	(flippable ?c - coin ?x - outcome)
+
+(:functions
+	(score ?p -role)
+)
+
+
+(:action choose-coin
+:parameters (?c - coin)
+:precondition (whoseturn p1)
+:effect	(and
+		(not (whoseturn p1))
+		(whoseturn chance)
+		(holds p1 ?c)
+		(inphase firstflip)
+		(observe (p1 (chosen ?c)
+			 (p2 (chosen ?))))))
+
+(:action flip-heads-first
+:parameters (?c - coin ?x - outcome)
+:precondition (and
+		(whoseturn chance)
+		(inphase firstflip)
+		(flippable ?c ?x)
+		(holds p1 ?c))
+:effect	(and
+		(not (whoseturn chance))
+		(not (inphase firstflip))
+		(whoseturn p2)
+		(when (isheads ?c ?x)
+			(and
+		      		(increase (score p1) 1)	
+				(observe (all (flipped heads)))))
+		(when (not (isheads ?c ?x))
+			(observe (all (flipped tails))))))
+
+(:action swap
+:parameters (?s - choice)
+:precondition (whoseturn p2)
+:effect (and
+		(not (whoseturn p2))
+		(whoseturn chance)
+		(inphase finalflip)
+		(observe (all (swapped ?s)))
+		(swapped ?s)))
+
+(:action p1-heady-flipout
+:parameters (?fh ?ff - outcome)
+:precondition (and
+		(flippable heady ?fh)
+		(flippable fair ?ff)
+		(whoseturn chance)
+		(inphase finalflip)
+		(or 
+			(and
+				(holds p1 heady)
+				(swapped no))
+			(and
+				(not (holds p1 heady))
+				(swapped yes))))
+:effect (and
+		(not (whoseturn chance))
+		(not (finalflip))
+		(observe (all (finalflips ?fh ?ff)))
+		(when (isheads heady ?fh)
+			(increase (score p1) 1))
+		(when (isheads fair ?ff)
+			(increase (score p2) 1))))
+		
+		
+(:action p1-fair-flipout
+:parameters (?fh ?ff - outcome)
+:precondition (and
+		(flippable heady ?fh)
+		(flippable fair ?ff)
+		(whoseturn chance)
+		(inphase finalflip)
+		(or 
+			(and
+				(holds p1 heady)
+				(swapped yes))
+			(and
+				(not (holds p1 heady))
+				(swapped no))))
+
+:effect (and
+		(not (whoseturn chance))
+		(not (finalflip))
+		(observe (all (finalflips ?fh ?ff)))
+		(when (isheads fair ?fh)
+			(increase (score p1) 1))
+		(when (isheads heady ?ff)
+			(increase (score p2) 1))))
+
+(:gain ?p - role 1
+	(exists ?o - role
+		(and
+			(opponent ?p ?o)
+			(> (score ?p) (score ?o)))))
+)

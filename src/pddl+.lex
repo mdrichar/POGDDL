@@ -33,7 +33,7 @@ at_time "at"{whitespace}{float}
 ":strips" {return STRIPS;}
 ":adl" {return ADL;}
 ":typing" {return TYPING;}
-":siigl" {return SIIGL;}
+":pogddl" {return POGDDL;}
 ":disjunctive-preconditions" {return DISJUNCTIVE_PRECONDS;}
 ":existential-preconditions" {return EXT_PRECS;}
 ":universal-preconditions" {return UNIV_PRECS;}

@@ -1,0 +1,259 @@
+(define (domain mastermind)
+(:requirements :strips :typing :siigl :derived-predicates :fluents)
+(:types position item phase number other role)
+(:constants
+	chance p1 p2 - role
+	initializing guessing accounting matching announcing - phase
+	;p00 p01 p02 p03 - position
+	;n00 n01 n02 n03 n04 - number
+	p00 p01 p02 - position
+	n00 n01 n02 n03 - number
+	all others u - other)
+	
+(:predicates
+	(whoseturn ?r - role)
+	(oppof ?r ?o - role)
+	(current ?p - position)
+	(next ?pn ?pc - position)
+	(nextn ?nn ?nc - number)
+	(last ?p - position)
+	(actual ?r - role ?p - position ?i - item)
+	(guessed ?p - position ?i - item)
+	(matched ?p - position)
+	(nmatches ?n - number)
+	(nusables ?n - number)
+	(used ?p - position)
+	(pending ?r - role)
+	(inphase ?p - phase)
+	(enough ?n - number)
+	(gameover)
+
+)
+
+(:functions
+	(score ?r - role)
+	(nturns)
+)
+
+(:action initialize-first
+	:parameters (?c ?n - position ?i - item)
+	:precondition (and
+		(whoseturn p1)
+		(inphase initializing)
+		(current ?c)
+		(next ?n ?c))
+	:effect (and
+		(actual p1 ?c ?i)
+		(not (current ?c))
+		(current ?n)
+		(observe (p1 (initialized1 ?c ?i))
+			(p2 (initialized1 ?c u)))
+		(when (last ?c)
+			(and
+				(not (whoseturn p1))
+				(whoseturn p2)))))
+
+(:action initialize-second
+	:parameters (?c ?n - position ?i - item)
+	:precondition (and
+		(whoseturn p2)
+		(inphase initializing)
+		(current ?c)
+		(next ?n ?c))
+	:effect (and
+		(actual p2 ?c ?i)
+		(not (current ?c))
+		(current ?n)
+		(observe (p1 (initialized2 ?c u))
+			(p2 (initialized2 ?c ?i)))
+		(when (last ?c)
+			(and
+				(not (inphase initializing))
+				(inphase guessing)
+				(not (whoseturn p2))
+				(whoseturn p1)))))
+
+(:action guess
+	:parameters (?r ?o - role ?c ?n - position ?i - item )
+	:precondition (and
+			(< (nturns) 24)
+			(whoseturn ?r)
+			(oppof ?r ?o)
+			(inphase guessing)
+			(current ?c)	
+			(next ?n ?c))
+	:effect (and
+			(guessed ?c ?i)
+			(observe (all (guessed ?r ?o ?c ?n ?i)))
+			(not (current ?c))
+			(current ?n)
+			(when (last ?c)
+				(and
+					(not (inphase guessing))
+					(inphase matching)
+					(nmatches n00)
+					(not (whoseturn ?r))
+					(whoseturn chance)
+					(pending ?o)))))
+
+(:action count-match
+	:parameters (?o - role ?c ?n - position ?i - item ?mc ?mn - number)
+	:precondition (and
+			(inphase matching)
+			(whoseturn chance)
+			(pending ?o)
+			(actual ?o ?c ?i)
+			(guessed ?c ?i)
+			(current ?c)
+			(next ?n ?c)
+			(nmatches ?mc)
+			(nextn ?mn ?mc))
+	:effect (and
+			(matched ?c)
+			(used ?c)
+			(not (current ?c))
+			(observe (all (mcounted ?o ?c ?n)))
+			(current ?n)
+			(when (last ?c)
+				(and
+					(nusables n00)
+					(not (inphase matching))
+					(inphase accounting)))
+			(not (nmatches ?mc))
+			(nmatches ?mn)))
+
+(:action count-non-match
+	:parameters (?o - role ?c ?n - position ?i - item )
+	:precondition (and
+			(inphase matching)
+			(whoseturn chance)
+			(pending ?o)
+			(actual ?o ?c ?i)
+			(not (guessed ?c ?i))
+			(current ?c)
+			(next ?n ?c))
+	:effect (and
+			(not (current ?c))
+			(current ?n)
+			(observe (all (mcounted ?o ?c ?n)))
+			(when (last ?c)
+				(and
+					(nusables n00)
+					(not (inphase matching))
+					(inphase accounting)))))
+
+(:action count-usable
+	:parameters (?uc ?un - number ?c ?n - position ?r - role ?i - item ?q - position)
+	:precondition (and
+			(inphase accounting)
+			(whoseturn chance)
+			(nusables ?uc)
+			(nextn ?un ?uc)
+			(current ?c)
+			(next ?n ?c)
+			(guessed ?c ?i)
+			(actual ?r ?q ?i)
+			(not (matched ?c))
+			(not (matched ?q))
+			(not (used ?q))
+			(pending ?r))
+	:effect (and
+			(not (current ?c))
+			(current ?n)
+			(observe (all (counting ?c ?n ?i)))
+			(when (last ?c)
+				(and
+					(not (inphase accounting))
+					(inphase announcing)))
+			(not (nusables ?uc))
+			(nusables ?un)
+			(used ?q)))
+
+(:action count-unusable-matched
+	:parameters (?c ?n - position ?i - item)
+	:precondition (and
+			(inphase accounting)
+			(current ?c)
+			(next ?n ?c)
+			(guessed ?c ?i)
+			(matched ?c))
+	:effect (and
+			(not (current ?c))
+			(current ?n)
+			(observe (all (counting ?c ?n ?i)))
+			(when (last ?c)
+				(and
+					(not (inphase accounting))
+					(inphase announcing)))))
+
+(:action count-unusable-unmatched
+	:parameters (?c ?n - position ?i - item ?r - role)
+	:precondition (and
+			(inphase accounting)
+			(whoseturn chance)
+			(current ?c)
+			(next ?n ?c)
+			(pending ?r)
+			(guessed ?c ?i)
+			(not (matched ?c))
+;			(forall (?pos - position)
+;				(or
+;					(not (actual ?r ?pos ?i))
+;					(used ?pos))))
+;
+			(and
+				(or
+					(not (actual ?r p00 ?i))
+					(used p00))
+				(or
+					(not (actual ?r p01 ?i))
+					(used p01))
+				(or
+					(not (actual ?r p02 ?i))
+					(used p02))))
+				;(or
+				;	(not (actual ?r p03 ?i))
+				;	(used p03))))
+	:effect (and
+			(not (current ?c))
+			(current ?n)
+			(observe (all (counting ?c ?n ?i)))
+			(when (last ?c)
+				(and
+					(not (inphase accounting))
+					(inphase announcing)))))
+
+(:action announce
+	:parameters (?r - role ?nm ?nu - number)
+	:precondition (and
+			(whoseturn chance)	
+			(inphase announcing)
+			(pending ?r)
+			(nmatches ?nm)
+			(nusables ?nu))
+	:effect (and
+			(observe (all (announced ?r ?nm ?nu)))
+			(forall (?p - position)
+				(and
+					(not (matched ?p))
+					(not (used ?p))))
+			(forall (?q - position ?i - item)
+					(not (guessed ?q ?i)))
+			(not (pending ?r))
+			(not (whoseturn chance))
+			(whoseturn ?r)
+			(increase (nturns) 1)
+			(not (inphase announcing))
+			(not (nmatches ?nm))
+			(not (nusables ?nu))
+			(when (enough ?nm)
+					(gameover))
+			(when (not (enough ?nm))
+					(inphase guessing))))
+
+(:gain ?p - role 1
+	(and
+		(gameover)
+		(not (whoseturn ?p))))
+)
+

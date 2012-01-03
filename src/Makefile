@@ -91,14 +91,14 @@ siigl: $(OBJS) mainith.o
 gread: $(OBJS) main.o
 	$(CXX) $(CXXFLAGS) -o gread $(OBJS) main.o -l gsl -lgslcblas
 
-wtr: $(OBJS) WriterMain.o
-	$(CXX) $(CXXFLAGS) -o wtr $(OBJS) WriterMain.o
+GenerateLogs: $(OBJS) GenerateLogsMain.o
+	$(CXX) $(CXXFLAGS) -o generateLogs $(OBJS) GenerateLogsMain.o
 
 one: $(OBJS) PlayOneGameMain.o
 	$(CXX) $(CXXFLAGS) -o one $(OBJS) PlayOneGameMain.o
 
 clean:
-	rm *.o lex.yy.cc pddl+.cpp sgl wtr one gread 
+	rm *.o lex.yy.cc pddl+.cpp sgl generateLogs one gread 
 
 purge:
 	rm *.gcda *.gcov *.gcno

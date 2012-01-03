@@ -51,11 +51,11 @@ int main(int argc,char * argv[])
     Processor::checkPayoffs = false;
     for (unsigned slotCount = 1; slotCount <= 10; slotCount++) {
       for (unsigned extraCardCount = 0; extraCardCount <= 45; extraCardCount += 5) {
-        string domainFile = "games/Gops.pog";
+        string domainFile = "../domains/Gops.pog";
         ostringstream problemStream;
-        problemStream << "games/Gops/gops" << slotCount << "-" << extraCardCount << ".pog";
+        problemStream << "../problems/Gops/gops-" << slotCount << "." << extraCardCount << ".pog";
         ostringstream logStream;
-        logStream << "Logs/Gops/gameLogGops" << slotCount << "-" << extraCardCount;
+        logStream << "../logs/Gops/gameLogGops-" << slotCount << "." << extraCardCount;
         //string problemFile = "games/r5-20.pog";
         //string logFile = "Logs/gameLogBattleship5-20";
         GameLogGenerator gameLogGenerator;

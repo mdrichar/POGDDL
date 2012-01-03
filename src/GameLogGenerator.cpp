@@ -11,7 +11,7 @@
 #include <sstream>
 #include "PerformanceCounters.h"
 
-#define PARSE_DEBUG 0
+#define PARSE_DEBUG 1
 extern int yyparse();
 extern int yydebug;
 using std::cout;

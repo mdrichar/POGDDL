@@ -1,5 +1,5 @@
 (define (domain gops)
-(:requirements :strips :typing :siigl :fluents)
+(:requirements :strips :typing pogddl :fluents)
 (:types card slot role phase other)
 (:constants
 	dealing announcing bidding determining - phase

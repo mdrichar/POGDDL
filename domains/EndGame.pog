@@ -1,5 +1,5 @@
 (define (domain endselection)
-(:requirements :strips :typing :siigl :derived-predicates :fluents)
+(:requirements :strips :typing pogddlddl :derived-predicates :fluents)
 (:types card slot role phase)
 (:constants
 	dealer - slot

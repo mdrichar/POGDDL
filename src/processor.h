@@ -98,6 +98,7 @@ private:
 
 
 public:
+  string domainName;
   WorldState worldState;
   WorldState initialWorld;
   static int intLength(unsigned maxBit);
@@ -208,7 +209,7 @@ public:
 
 // Game specific formatters
   void setFormatter(WorldStateFormatter* formatter);
-  string getFormattedState(WorldState& ws);
+  string getFormattedState(const VecInt& gameHistory, WorldState& ws);
 
 // payoffs
   void computePayoffs(WorldState& ws);
@@ -219,11 +220,6 @@ public:
   VecInt mutablePreds; // Identify which predicates can be changed by operators
   VecSetVecInt opsByRev; 
   VecInt getPartialOperator(const VecInt& observation, const VecInt& argMapper);
-//WorldState getDisjunctionConsequences(VecInt& legalActions, WorldState partialWorld, 
-  //SetInt& addEffectsInter, SetInt& delEffectsInter, SetInt& addSymDiff, SetInt& delSymDiff);
-  //WorldState getDisjunctionConsequences(VecInt& legalActions, WorldState partialWorld, SetInt& adds, SetInt& dels, SetInt& possAdds, SetInt& possDels);
-  //WorldState getDisjunctionConsequences(const WorldState& oldPartial, const SetInt& adds, const SetInt& dels, const SetInt& possAdds, const SetInt& possDels);
-  //void sandbox(const VecVecVecKey& kb, const VecSetVecInt& opsByRev);
   void sandbox2(const VecVecVecKey& kb, const VecSetVecInt& opsByRev);
 };
 }

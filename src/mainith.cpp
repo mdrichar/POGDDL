@@ -29,9 +29,6 @@ using std::for_each;
 using std::copy;
 using std::exception;
 
-extern int yyparse();
-extern int yydebug;
-
 void usage()
 {
 	cout << "pog: Stochastic and Imperfect Information Game Language\n"
@@ -161,6 +158,7 @@ void assignGame(int gameid, bool& alwaysCheckPayoffs, string& domainString, stri
 		break;
 	default:
 		assert(false);
+		break;
   }
 }
 

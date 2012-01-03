@@ -33,7 +33,7 @@ class GameLogger
 {
 public:
   GameLogger();
-  ~GameLogger();
+  virtual ~GameLogger();
   virtual void reset();
   virtual void append(unsigned currentMove) = 0;
   virtual void close() = 0;
@@ -47,7 +47,7 @@ class DefaultGameLogger : public GameLogger
 {
 public:
   DefaultGameLogger();
-  ~DefaultGameLogger();
+  virtual ~DefaultGameLogger();
   virtual void append(unsigned currentMove);
   virtual void close();
 
@@ -57,7 +57,7 @@ class FileGameLogger : public GameLogger
 {
 public:
   FileGameLogger(const string& filename);
-  ~FileGameLogger();
+  virtual ~FileGameLogger();
   virtual void append(unsigned currentMove);
   virtual void close();
 

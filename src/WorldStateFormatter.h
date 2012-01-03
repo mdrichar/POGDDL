@@ -12,7 +12,7 @@ class WorldStateFormatter {
 public:
   Processor* proc;
   WorldStateFormatter();
-  ~WorldStateFormatter();
+  virtual ~WorldStateFormatter();
   virtual void setProcessor(Processor* procIn);
   virtual std::string asString(WorldState& ws) = 0;
 };
@@ -20,7 +20,7 @@ public:
 class DefaultWorldStateFormatter : public WorldStateFormatter {
 public:
   DefaultWorldStateFormatter();
-  ~DefaultWorldStateFormatter(); 
+  virtual ~DefaultWorldStateFormatter();
   virtual std::string asString(WorldState& ws);
 };
 
@@ -30,7 +30,7 @@ public:
   unsigned cardCount;
 
   RackoWorldStateFormatter(unsigned slotCountIn, unsigned cardCountIn);
-  ~RackoWorldStateFormatter(); 
+  virtual ~RackoWorldStateFormatter();
   virtual std::string asString(WorldState& ws);
 };
 
@@ -40,7 +40,7 @@ public:
   unsigned gridPointsPerSide;
 
   BattleshipWorldStateFormatter(unsigned shipCountIn, unsigned gridPointsPerSideIn);
-  ~BattleshipWorldStateFormatter(); 
+  virtual ~BattleshipWorldStateFormatter();
   virtual std::string asString(WorldState& ws);
 };
 

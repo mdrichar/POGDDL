@@ -158,6 +158,7 @@ string Processor::asString(const VecInt & vi, ListType lt) {
 			case NUMERIC:
 			case PREDICATE:
 				os << " " << vi[i];
+				break;
 			}
 		}
 	}
@@ -265,6 +266,7 @@ Processor::Processor(const gain_list & gains_, const operator_list & operators_)
 Processor::Processor(VAL::analysis *parsedStructures) :
 		maxPred(0), maxOperator(0), worldState(), gains(*parsedStructures->the_domain->gains), operators(
 				*parsedStructures->the_domain->ops) {
+	this->domainName = parsedStructures->the_domain->name;
 	processTypes(parsedStructures->pddl_type_tab);
 	processConstants(parsedStructures->const_tab);
 	processPredicates(*parsedStructures->the_domain->predicates);
@@ -1489,9 +1491,12 @@ void Processor::setFormatter(WorldStateFormatter* formatter) {
 	this->formatter = formatter;
 }
 
-string Processor::getFormattedState(WorldState& ws) {
+string Processor::getFormattedState(const VecInt& gameHistory, WorldState& ws) {
 	assert(formatter != NULL);
-	return formatter->asString(ws);
+	ostringstream os;
+	os << "Game History: " << asString(gameHistory) << "\n";
+	os << formatter->asString(ws);
+	return os.str();
 }
 
 }

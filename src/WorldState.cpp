@@ -146,6 +146,7 @@ void WorldState::setTruthValue(unsigned index, TruthState val)
       break;
     case UNKNOWN:
       Reset(knownFlags,index);
+      break;
   }
 }
 

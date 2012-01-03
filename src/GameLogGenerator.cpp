@@ -296,7 +296,7 @@ void GameLogReader::sumPayoffsOverManyGames()
       p->kb.clear();
       ActionGraph::fluentHistory.resize(1); // Reset fluent history
       //cout << p->printState(currentGameState) << endl;
-      VecInt choiceVector(moveCount);
+      VecInt gameHistory(moveCount);
       cout << "Moves: " << moveCount << endl;
       unsigned targetMove = moveCount * 0.5;
       //unsigned targetMove = 26; 
@@ -304,7 +304,7 @@ void GameLogReader::sumPayoffsOverManyGames()
       for (unsigned i = 0; i < moveCount; i++) {
 	unsigned chosenAction;
         oneGameStream >> chosenAction; 
-        choiceVector[i] = chosenAction;
+        gameHistory[i] = chosenAction;
         if (i != 0) { // Throw away 0th item
           cout << i << ": " << chosenAction << " " << p->operatorIndexToString(chosenAction) << endl;
           if (i > targetMove && currentGameState.getWhoseTurn() != 0) {
@@ -326,13 +326,13 @@ void GameLogReader::sumPayoffsOverManyGames()
 	const unsigned int pid = currentGameState.getWhoseTurn();
 	const PlayerType pt = P_MCTS;
   	unsigned requestSize = (pt == P_INFER) ? augmentedRequest : maxSize;
-        cout << p->getFormattedState(currentGameState) << endl;
+        cout << p->getFormattedState(gameHistory, currentGameState) << endl;
 
 	// Do it once using depth first search and once using constraint-satisfaction search
         PerformanceCounters::resetCounters();
   	InfoSetGenerator isg(p,p->kb,p->initialWorld);
   	SetVecInt infoset = isg.generateN(pid,requestSize); // Parker05 DFS
-	cout << currentLineNumber << " Infoset size using dfs: " << infoset.size() << "  First action: " << choiceVector[1] << endl;
+	cout << currentLineNumber << " Infoset size using dfs: " << infoset.size() << "  First action: " << gameHistory[1] << endl;
 	// Accumulate
         cout << "DFS: " << PerformanceCounters::getPerformanceReportAsString() << endl;
 	overallSolutionCountDFS += PerformanceCounters::solutionCount;
@@ -342,7 +342,7 @@ void GameLogReader::sumPayoffsOverManyGames()
         PerformanceCounters::resetCounters();
   	InfoSetGenerator isgCBS(p,p->kb,p->initialWorld);
   	SetVecInt infosetCBS = isgCBS.generate(pid,requestSize); // CSIG
-	cout << currentLineNumber << " Infoset size using cbs: " << infosetCBS.size() << "  First action: " << choiceVector[1] << endl;
+	cout << currentLineNumber << " Infoset size using cbs: " << infosetCBS.size() << "  First action: " << gameHistory[1] << endl;
 	// Accumulate
         cout << "CBS: " << PerformanceCounters::getPerformanceReportAsString() << endl;
 	overallSolutionCountCBS += PerformanceCounters::solutionCount;

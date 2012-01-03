@@ -29,8 +29,8 @@ CXX      := g++
 #CXX	 := mpicxx -DMYMPI
 #CXXFLAGS  = ${DEPENDFLAGS} -ansi #-O3 -DNDEBUG #-pg -fprofile-arcs
 #CXXFLAGS  = ${DEPENDFLAGS} -ansi -O3 -pg -fprofile-arcs -ftest-coverage
-CXXFLAGS  = ${DEPENDFLAGS} -ansi -g -pg -fprofile-arcs -ftest-coverage
-#CXXFLAGS  = ${DEPENDFLAGS} -ansi -g 
+#CXXFLAGS  = ${DEPENDFLAGS} -ansi -g -pg -fprofile-arcs -ftest-coverage
+CXXFLAGS  = ${DEPENDFLAGS} -ansi -g 
 #CXXFLAGS  = ${DEPENDFLAGS} -ansi -O3 -DNDEBUG 
 
 .SUFFIXES: .cpp .o .yacc .lex
@@ -83,9 +83,9 @@ JAR    := jar
 
 OBJS = $(SOURCES:.cpp=.o)
 
-all: siigl
+all: pogddl
 
-siigl: $(OBJS) mainith.o
+pogddl: $(OBJS) mainith.o
 	$(CXX) $(CXXFLAGS) -o sgl $(OBJS) mainith.o
 
 gread: $(OBJS) main.o
@@ -98,7 +98,7 @@ one: $(OBJS) PlayOneGameMain.o
 	$(CXX) $(CXXFLAGS) -o one $(OBJS) PlayOneGameMain.o
 
 clean:
-	rm *.o lex.yy.cc pddl+.cpp sgl generateLogs one gread 
+	rm *.o lex.yy.cc pddl+.cpp *.out* sgl generateLogs one gread 
 
 purge:
 	rm *.gcda *.gcov *.gcno

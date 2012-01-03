@@ -59,6 +59,8 @@ public:
   map<string,string> objectTypes;
   // map string:VecStr
   TypedIntToObject invObjectTbl;  // figure out what the name of an argument should be from its type and index#
+  VecVecStr objectTblByTypeId;
+  string getObjectName(int typeId, int objectId);
 
 // Operators 
   PredicateTable opsTbl; // maps a predicate name to a VecStr that lists the types of the arguments
@@ -70,7 +72,7 @@ public:
 
 // Revelations
   StringToInt revHeadTbl;
-  VecStr inverseRevs;
+  VecStr observationIntToString;
   VecVecInt revParamTypeTbl; // revParamTypeTbl[i][j] gives the index of the type of the jth parameter to the the observations indexed by i
   VecVecInt revParamTypeCardTbl; 
   bool isRevAlreadyPresent(const string& name);
@@ -91,6 +93,7 @@ public:
 
 private:
   WorldStateFormatter* formatter;
+    string observationToString(VecInt & currentObs);
 
 
 
@@ -122,7 +125,6 @@ public:
   Processor(VAL::analysis* parsedStructures);
   ~Processor() {  };
   void processTypes(const pddl_type_symbol_table& types);
-  void processConstants(const const_symbol_list& constants);
   void processConstants(const const_symbol_table& constants);
   void processOperators();
   void processGains();
@@ -130,10 +132,9 @@ public:
   //VecInt legalOperators(VecInt& partialOp, WorldState& partialWorld, VecInt& prePos, VecInt& preNeg);
   void processPredicates(const pred_decl_list& predicates);
   void processFunctions(const func_decl_list& functions);
-  void processConstants(domain* p);
   void enumerateFacts();
   void enumerateInitFacts(effect_lists* initFacts);
-  void preWrite();
+  void populateObjectLookupTable();
   void write2(ostream& o);
   //int getNum(string, string);
   //int getNum(string, string, string);

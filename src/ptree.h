@@ -195,6 +195,7 @@ template <class symbol_class> class typed_symbol_list;
 typedef set<string> SetStr;
 typedef set<int> SetInt;
 typedef vector<string> VecStr;
+typedef vector< VecStr > VecVecStr;
 typedef vector<int> VecInt;
 typedef vector<VecInt> VecVecInt;
 typedef vector<SetInt> VecSetInt;

@@ -222,7 +222,8 @@ int WorldState::getWhoseTurn() const
       activePlayersFound++;
     }
   }
-  assert (activePlayersFound == 1); // There should always be exactly one player whose turn it is
+  //If we allow it to be no one's turn when the game is over, this assertion is too strong
+  //assert (activePlayersFound == 1); // There should always be exactly one player whose turn it is
   return playerId;
 }
 

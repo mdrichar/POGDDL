@@ -46,9 +46,9 @@ void assignGame(int gameid, bool& alwaysCheckPayoffs, string& domainString, stri
 {
   switch (gameid) {
 	case 1: 
-		domainString = "games/Racko.pog";
+		domainString = "../domains/Racko.pog";
 		//problemString = "games/r3-9.pog";
-		problemString = "games/Racko/racko5-20.pog";
+		problemString = "../problems/Racko/racko-5.20.pog";
 		//problemString = "games/Racko/racko10-60.pog";
 		//problemString = "games/Racko/racko5-40.pog";
 		alwaysCheckPayoffs = true;

@@ -64,7 +64,7 @@ VecPayoff GameModerator::playGame(int seed, GameLogger& gameLogger)
     cout << "RANDOM: SEED " << seed << "\n"; 
 #endif
   }
-  static const bool pverbose = false;
+  static const bool pverbose = true;
   WorldState current = this->initState;
   if (pverbose) cout << "Initial State*********************************************************************************\n" << proc->printState(current) << "\n";
   proc->kb.clear();
@@ -75,7 +75,7 @@ VecPayoff GameModerator::playGame(int seed, GameLogger& gameLogger)
       proc->computePayoffs(current);
       int sumPayoffs = proc->sumPayoffs();
       if (sumPayoffs > 0 || canDo.empty()) {
-        // Game over
+        // Game over; Display final info
         if (pverbose) cout << proc->printState(current) << "\n";
         if (pverbose) cout << "Payoffs: " << proc->asString(proc->payoffs) << "\n";
         if (pverbose) cout << "FinalState*********************************************************************************\n" << proc->printState(current) << "\n";

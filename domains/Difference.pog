@@ -1,0 +1,84 @@
+(define (domain difference)
+(:requirements :strips :typing :pogddl :fluents)
+(:types card slot role phase)
+(:constants
+	dealer - slot
+	chance p1 p2 - role
+	drawing playing - phase
+	all others u - other)
+	
+(:predicates
+	(at ?c - card ?s - slot)
+	(dealer ?c - card)
+	(owns ?p - role ?s - slot)
+	(inphase ?p - phase)
+	(whoseturn ?r - role)
+	(oppof ?r ?other - role)
+	(pending ?p - role)
+	(empty ?s - slot)
+	(gameover)
+
+)
+
+(:functions
+	(score ?p - role)
+	(value ?c - card)
+)
+
+(:action draw 
+:parameters (?p ?o - role ?s - slot ?c - card)
+:precondition (and
+		(inphase drawing)
+		(whoseturn chance)
+		(pending ?p)
+		(oppof ?p ?o)
+		(owns ?p ?s)
+		(dealer ?c)
+		(empty ?s))
+:effect (and
+		(not (inphase drawing))
+		(not (whoseturn chance))
+		(not (pending ?p))
+		(not (dealer ?c))
+		(not (empty ?s))
+		(inphase playing)
+		(whoseturn ?p)
+		(at ?c ?s)
+		(observe (?p (drew ?p ?o ?s ?c)
+			  ?o (drew ?p ?o ?s u)))))
+
+(:action play
+:parameters (?p ?o - role ?s - slot ?c ?q - card)
+:precondition (and
+		(whoseturn ?p)
+		(inphase playing)
+		(owns ?p ?s)
+		(at ?c ?s)
+		(center ?q))
+:effect (and
+		(not (whoseturn ?p))
+		(not (inphase playing))
+		(not (center ?q))
+		(not (at ?c ?s))
+		(whoseturn chance)
+		(inphase drawing)
+		(pending ?o)
+		(empty ?s)
+		(center ?c)
+		(observe (all (played ?p ?o ?s ?c ?q)))
+		(when (> (value ?c) (value ?q))
+			(increase (score ?p) (- (value ?c) (value ?q))))
+		(when (< (value ?c) (value ?q))
+			(increase (score ?p) (- (value ?q) (value ?c))))))
+
+(:gain ?p - role 1
+	(and
+		(gameover)
+		(or
+			(and
+				(first ?p)
+				(> (score p1) (score p2)))
+			(and
+				(not (first ?p))
+				(>  (score p2) (score p1)))))
+))

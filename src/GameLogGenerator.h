@@ -8,7 +8,7 @@
 
 namespace VAL {
 
-enum Game {RACKO,BATTLESHIP,GOPS,MASTERMIND,MATCHING} ;
+enum Game {RACKO,BATTLESHIP,GOPS,MASTERMIND,MATCHING,ENDGAME} ;
 class WorldStateFormatter;
 class GameParser
 {
@@ -69,6 +69,7 @@ public:
   string logString;
   VAL::Processor* p;
   analysis* an_analysis;
+  WorldStateFormatter* formatter;
   GameLogReader(const string& domainString, const string& problemString, const string& logString, WorldStateFormatter* formatter);
   ~GameLogReader();
   void sumPayoffsOverManyGames();

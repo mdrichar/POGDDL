@@ -525,24 +525,24 @@ void OperatorController::processRevMsg(proposition* p) {
 	const parameter_symbol_list& obsArgList = *p->getArgs();
 	const string& name = p->getHead()->getName();
 	unsigned revHeadId = 0;
-	StringToInt::const_iterator headFinder = proc->revHeadTbl.find(name);
-	if (headFinder != proc->revHeadTbl.end()) {
+	StringToInt::const_iterator headFinder = proc->obsHeadTbl.find(name);
+	if (headFinder != proc->obsHeadTbl.end()) {
 		revHeadId = headFinder->second;
 	} else {
-		revHeadId = proc->revHeadTbl.size();
+		revHeadId = proc->obsHeadTbl.size();
 		proc->observationIntToString.push_back(name);
 		proc->opsByRev.push_back(SetVecInt());
-		proc->revHeadTbl[name] = revHeadId;
-		proc->revParamTypeTbl.push_back(VecInt(obsArgList.size(), UVAL));
-		proc->revParamTypeCardTbl.push_back(VecInt(obsArgList.size(), -1));
+		proc->obsHeadTbl[name] = revHeadId;
+		proc->obsParamTypeTbl.push_back(VecInt(obsArgList.size(), UVAL));
+		proc->obsParamTypeCardTbl.push_back(VecInt(obsArgList.size(), -1));
 	}
-	VecInt& revParamTypeIds = proc->revParamTypeTbl[revHeadId];
-	VecInt& revParamTypeCards = proc->revParamTypeCardTbl[revHeadId];
+	VecInt& revParamTypeIds = proc->obsParamTypeTbl[revHeadId];
+	VecInt& revParamTypeCards = proc->obsParamTypeCardTbl[revHeadId];
 	VecInt argMap(obsArgList.size());
 	//if (!proc->isRevAlreadyPresent(name)) {
 	//    proc->newRevelationHeadId(name,psl.size());
 	//}
-	p->setHeadId(proc->revHeadTbl[name]);
+	p->setHeadId(proc->obsHeadTbl[name]);
 	VecInt revMapper(obsArgList.size() + 1, 0);
 	revMapper[obsArgList.size()] = this->currentOp->getHeadId();
 	int i = 0;

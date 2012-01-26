@@ -1,5 +1,5 @@
 (:define (domain coins)
-(:requirements :strips :typing :fluents pogddl
+(:requirements :strips :typing :fluents :pogddl)
 (:types role coin phase choice outcome
 (:constants
 	chance p1 p2 - role

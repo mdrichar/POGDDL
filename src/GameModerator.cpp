@@ -6,7 +6,7 @@
 #include <cstdio>
 //#define INTERACTIVE
 
-const bool gmverbose = false;
+const bool gmverbose = true;
 const bool medverbose = false;
 const bool showApplying = true;
 unsigned GameModerator::maxSize = 30;
@@ -23,6 +23,7 @@ StringToPlayerType GameModerator::getPlayerTypes() {
 	result["RANDOM"] = P_RANDOM;
 	result["LIMITED"] = P_MCTS_LIMITED;
 	result["INFER"] = P_INFER;
+	result["HEURISTIC"] = P_HEURISTIC;
 	return result;
 }
 
@@ -43,6 +44,8 @@ string GameModerator::typeString(PlayerType pt) {
 		return "LIMITED";
 	case P_INFER:
 		return "INFER";
+	case P_HEURISTIC:
+		return "HEURISTIC";
 	default:
 		return "UNKNOWN";
 	}
@@ -62,15 +65,13 @@ VecPayoff GameModerator::playGame(int seed, GameLogger& gameLogger) {
 		cout << "Seed: " << seed << "\n";
 	if (seed) {
 		srand(seed);
-#ifdef PRANDOM
-		cout << "RANDOM: SEED " << seed << "\n";
-#endif
 	}
 	static const bool pverbose = true;
 	WorldState current = this->initState;
 	if (pverbose)
 		cout << "Initial State*********************************************************************************\n"
 				<< proc->printState(current) << "\n";
+
 	proc->kb.clear();
 	int moveNumber = 1;
 	while (true) {
@@ -117,15 +118,16 @@ VecPayoff GameModerator::playGame(int seed, GameLogger& gameLogger) {
 			}
 #endif
 		} else if (players[whoseTurn] == P_HUMAN) {
-			cout << proc->getFormattedState(gameHistory, current) << std::endl;
+			cout << proc->getFormattedState(gameHistory, current, proc->kb) << std::endl;
 			VecInt legalActions = proc->legalOperators(current);
 			for (unsigned i = 0; i < legalActions.size(); i++) {
 				cout << i << " " << proc->operatorIndexToString(legalActions[i]) << "\n";
 			}
 			chosenAction = chooseHumanMove(proc, canDo, initState);
 		} else {
-			if (gmverbose)
+			if (gmverbose) {
 				cout << "WT: " << whoseTurn << "\n";
+			}
 			chosenAction = chooseMove(players[whoseTurn], proc, canDo, whoseTurn, proc->kb, initState,
 					GameModerator::manySamples, GameModerator::fewSamples);
 		}
@@ -156,8 +158,7 @@ VecPayoff GameModerator::playGame(int seed, GameLogger& gameLogger) {
 	}
 	return proc->payoffs;
 }
-
-VecPayoff GameModerator::playManyGames(int n, int rank, int size, int& nGamesPlayed, GameLogger& logger) {
+VecPayoff GameModerator::playManyGames(int n, int rank, int size, int & nGamesPlayed, GameLogger & logger) {
 	static const int fixedSeed = 1234987123;
 	//static const int fixedSeed = 20110510;
 	VecPayoff result(initState.getNRoles(), 0);
@@ -165,19 +166,16 @@ VecPayoff GameModerator::playManyGames(int n, int rank, int size, int& nGamesPla
 		int notRandom = fixedSeed + i * i + i * i * i + i;
 		VecPayoff oneGameOutcomes = playGame(notRandom, logger);
 		cout << "Game " << i << " Rank " << rank << ": " << proc->asString(oneGameOutcomes) << "\n";
-#ifdef PAUSES
-		getchar();
-		getchar();
-#endif
 		for (unsigned j = 0; j < result.size(); j++) {
 			result[j] += oneGameOutcomes[j];
 		}
 		nGamesPlayed++;
 	}
+
 	return result;
 }
 
-VecInt getLegals(const SetVecInt& infoset, WorldState current, Processor* p) {
+VecInt getLegals(const SetVecInt & infoset, WorldState current, Processor *p) {
 	assert(!infoset.empty());
 	if (infoset.empty()) {
 		std::cerr << "Info set empty\n";
@@ -187,15 +185,17 @@ VecInt getLegals(const SetVecInt& infoset, WorldState current, Processor* p) {
 	return p->legalOperators(current);
 }
 
-int GameModerator::chooseMove(PlayerType pt, Processor* p, VecInt& legalOptions, unsigned pid, VecVecVecKey& obs,
-		WorldState& initState, int nSamples, int oppSamples) {
+int GameModerator::chooseMove(PlayerType pt, Processor *p, VecInt & legalOptions, unsigned pid, VecVecVecKey & obs,
+		WorldState & initState, int nSamples, int oppSamples) {
 	InfoSetGenerator isg(p, obs, initState);
 	if (gmverbose)
 		cout << "CHOOSE MOVE BEGIN INFOSET GENERATION\n";
+
 	unsigned requestSize = (pt == P_INFER) ? augmentedRequest : maxSize;
 	SetVecInt infoset = isg.generate(pid, requestSize);
 	if (gmverbose)
 		cout << "CHOOSE MOVE END INFOSET GENERATION\n";
+
 	if (infoset.empty()) {
 		cout << "Empty infoset in choosemove\n";
 		return -1;
@@ -207,7 +207,8 @@ int GameModerator::chooseMove(PlayerType pt, Processor* p, VecInt& legalOptions,
 	//case P_HUMAN:
 	case P_INFER:
 		result = chooseInferenceMove(p, pid, obs, infoset, legalOptions, initState, nSamples, oppSamples);
-		if (result == -2) { // None of the infoset nodes were consistent
+		if (result == -2) {
+			// None of the infoset nodes were consistent
 			cout << "Zero prob est for all infoset nodes -- using MCTS instead\n";
 			for (SetVecInt::const_iterator it = infoset.begin(); it != infoset.end(); ++it) {
 				cout << InfoSetGenerator::moveSequenceString(*it) << "\n\n";
@@ -215,6 +216,7 @@ int GameModerator::chooseMove(PlayerType pt, Processor* p, VecInt& legalOptions,
 			infoset = InfoSetGenerator::randomPruneDownTo(infoset, maxSize);
 			result = chooseMoveMCTS(p, obs, infoset, legalOptions, initState, nSamples);
 		}
+
 		break;
 	case P_MCTS_LIMITED:
 		result = chooseMoveMCTS(p, obs, infoset, legalOptions, initState, oppSamples);
@@ -222,23 +224,25 @@ int GameModerator::chooseMove(PlayerType pt, Processor* p, VecInt& legalOptions,
 	case P_MCTS:
 		result = chooseMoveMCTS(p, obs, infoset, legalOptions, initState, nSamples);
 		break;
+	case P_HEURISTIC:
+		result = chooseMoveHeuristic(p, obs, infoset, legalOptions, initState, nSamples);
+		break;
 	default:
 		//return chooseMCTSMove(p, pid, obs, infoset, initState);
 		result = chooseMoveMCTS(p, obs, infoset, legalOptions, initState, nSamples);
-//int GameModerator::chooseMoveMCTS(Processor* p, const VecVecVecKey& obs, const SetVecInt& infoset, const VecInt& legalOptions, const WorldState& initState)
+		//int GameModerator::chooseMoveMCTS(Processor* p, const VecVecVecKey& obs, const SetVecInt& infoset, const VecInt& legalOptions, const WorldState& initState)
 		break;
 	}
+
 	// Don't make it this far
 	//cout << "Move selected: " << p->operatorIndexToString(result) << " by " << typeString(pt) << "\n";
-#ifdef PAUSES
-	getchar();
-#endif
 	return result;
 }
 
-int argMax(VecFloat& vf) {
+int argMax(VecFloat & vf) {
 	if (gmverbose)
 		cout << "ArgMax: " << vf.size() << "\n";
+
 	assert(!vf.empty());
 	int result = 0;
 	float vmax = vf[0];
@@ -248,10 +252,11 @@ int argMax(VecFloat& vf) {
 			vmax = vf[i];
 		}
 	}
+
 	return result;
 }
 
-int GameModerator::chooseHumanMove(Processor* p, const VecInt& legalActions, WorldState& initState) {
+int GameModerator::chooseHumanMove(Processor *p, const VecInt & legalActions, WorldState & initState) {
 	//assert (!infoset.empty());
 	//WorldState current = initState;
 	//proc->apply(*infoset.begin(),current);
@@ -262,13 +267,15 @@ int GameModerator::chooseHumanMove(Processor* p, const VecInt& legalActions, Wor
 	return legalActions[dummy];
 }
 
-VecFloat GameModerator::mctsExplore(const VecInt& seq, const WorldState& initState, Processor* p, int nSamples) {
+VecFloat GameModerator::mctsExplore(const VecInt & seq, const WorldState & initState, Processor *p, int nSamples) {
 	if (gmverbose)
 		cout << "MCTS EXPLORE: " << nSamples << "\n";
+
 	assert(nSamples > 0);
 	if (nSamples < 0)
-		nSamples = (int) Node::nSamples;
-	Node& root = Node::nodeVec()[0];
+		nSamples = (int) (Node::nSamples);
+
+	Node & root = Node::nodeVec()[0];
 	// For each node (specified by a sequence of moves from root)
 	WorldState current = initState;
 	proc->apply(seq, current);
@@ -277,6 +284,7 @@ VecFloat GameModerator::mctsExplore(const VecInt& seq, const WorldState& initSta
 	VecFloat result(nOptions);
 	if (gmverbose)
 		cout << "Running MCTS on active player: " << current.getWhoseTurn() << "\n";
+
 	root.initializeRoot(current);
 	if (root.terminal) { // \TODO: Maybe just assert !root.terminal
 		if (gmverbose)
@@ -312,7 +320,7 @@ VecFloat GameModerator::mctsExplore(const VecInt& seq, const WorldState& initSta
 	return result;
 }
 
-VecVecFloat GameModerator::getDecisionMatrix(const SetVecInt& infoset, const WorldState& initState, Processor* p,
+VecVecFloat GameModerator::getDecisionMatrix(const SetVecInt & infoset, const WorldState & initState, Processor *p,
 		int nSamples) {
 	VecVecFloat result;
 	for (SetVecInt::const_iterator itr = infoset.begin(); itr != infoset.end(); ++itr) {
@@ -321,23 +329,27 @@ VecVecFloat GameModerator::getDecisionMatrix(const SetVecInt& infoset, const Wor
 	return result;
 }
 
-int GameModerator::getDecisionMCTS(const VecInt& legalOptions, const VecVecFloat& vvf, VecFloat& sums) {
-	static const bool decverbose = false || gmverbose;
+int GameModerator::getDecisionFromMatrix(const VecInt & legalOptions, const VecVecFloat & vvf, VecFloat & sums) {
+	static const bool decverbose = true || gmverbose;
 	//VecFloat sums(legalOptions.size(),0.0f);
 	for (unsigned a = 0; a < legalOptions.size(); a++) {
-		if (decverbose)
+		if (decverbose) {
 			cout << proc->operatorIndexToString(legalOptions[a]) << "; ";
+		}
 	}
-	if (decverbose)
+	if (decverbose) {
 		cout << "\n";
+	}
 	for (unsigned i = 0; i < vvf.size(); i++) {
 		for (unsigned a = 0; a < legalOptions.size(); a++) {
-			if (decverbose)
+			if (decverbose) {
 				printf("%1.3f ", vvf[i][a]);
+			}
 			sums[a] += vvf[i][a];
 		}
-		if (decverbose)
+		if (decverbose) {
 			printf("\n");
+		}
 	}
 	if (decverbose) {
 		printf("\n");
@@ -346,53 +358,50 @@ int GameModerator::getDecisionMCTS(const VecInt& legalOptions, const VecVecFloat
 		}
 		printf("\n");
 	}
+
 	unsigned bestActionIndex = argMax(sums);
 	return legalOptions[bestActionIndex];
 }
 
-int GameModerator::chooseMoveMCTS(Processor* p, const VecVecVecKey& obs, const SetVecInt& infoset,
-		const VecInt& legalOptions, const WorldState& initState, int nSamples) {
+int GameModerator::chooseMoveMCTS(Processor *p, const VecVecVecKey & obs, const SetVecInt & infoset,
+		const VecInt & legalOptions, const WorldState & initState, int nSamples) {
 	static const bool decverbose = false || gmverbose;
 	VecVecFloat decisionMat = getDecisionMatrix(infoset, initState, p, nSamples);
 	VecFloat sums(legalOptions.size(), 0.0f);
-	int bestAction = getDecisionMCTS(legalOptions, decisionMat, sums);
+	int bestAction = getDecisionFromMatrix(legalOptions, decisionMat, sums);
 	if (decverbose)
 		cout << "Optimal decision: " << bestAction << " (" << proc->operatorIndexToString(bestAction) << ")\n";
+
 	//exit(0);
 	//assert(false);
-#ifdef INTERACTIVE
-	int dummy;
-	std::cin >> dummy;
-	if (dummy != -1) {
-		return legalActions[dummy];
-	}
-#endif
 	return bestAction;
 }
-
-int lastOpponentMove(const VecInt& sequence, unsigned pid, Processor* p, WorldState current) {
+int lastOpponentMove(const VecInt & sequence, unsigned pid, Processor *p, WorldState current) {
 	static const bool verbose = false;
 	unsigned result = -1;
 	NewConditionController ncc(p, current);
 	if (verbose)
 		cout << "PID: " << pid << "\n";
+
 	for (unsigned t = 1; t < sequence.size(); t++) {
 		unsigned wt = current.getWhoseTurn();
 		if (verbose)
 			cout << "Action at time " << t << " is made by player " << wt << " ("
 					<< p->operatorIndexToString(sequence[t]) << ")\n";
+
 		if (wt != pid && wt != 0) {
 			result = t;
 		}
 		p->shortApply(sequence[t], current, ncc);
 	}
+
 	if (verbose)
 		cout << "Last opponent move: " << result << "\n";
+
 	return result;
 }
-
-int GameModerator::chooseInferenceMove(Processor* p, unsigned pid, VecVecVecKey& obs, SetVecInt& infoset,
-		const VecInt& legalOptions, WorldState& initState, int nSamples, int oppSamples) {
+int GameModerator::chooseInferenceMove(Processor *p, unsigned pid, VecVecVecKey & obs, SetVecInt & infoset,
+		const VecInt & legalOptions, WorldState & initState, int nSamples, int oppSamples) {
 	static bool infverbose = false;
 	VecFloat probs(infoset.size(), 0.0); // Initially, the unnormalized prob for each node in the infoset.  probs[i] = 0 if we estimate that the previous player would not have allowed play to reach that point
 	VecVecFloat decArray;
@@ -429,7 +438,7 @@ int GameModerator::chooseInferenceMove(Processor* p, unsigned pid, VecVecVecKey&
 // Figure out what the other guy's decision would have been
 		VecVecFloat decisionMat = getDecisionMatrix(oppInfoset, initState, p, oppSamples);
 		VecFloat sums(oppLegalActions.size(), 0.0f);
-		int bestOppAction = getDecisionMCTS(oppLegalActions, decisionMat, sums);
+		int bestOppAction = getDecisionFromMatrix(oppLegalActions, decisionMat, sums);
 		if (infverbose) {
 			for (unsigned s = 0; s < sums.size(); s++) {
 				printf("S%1.3f ", sums[s]);
@@ -499,8 +508,10 @@ int GameModerator::chooseInferenceMove(Processor* p, unsigned pid, VecVecVecKey&
 	}
 	if (gmverbose)
 		cout << "INFOSET nodes that are CONSISTENT: " << nConsistents << "/" << infoset.size() << "\n";
+
 	if (nConsistents == 0)
 		return -2;
+
 	VecFloat weightedEsts(legalOptions.size(), 0.0f);
 	for (unsigned j = 0; j < decArray.size(); j++) {
 		assert(decArray[j].size() == legalOptions.size());
@@ -523,6 +534,7 @@ int GameModerator::chooseInferenceMove(Processor* p, unsigned pid, VecVecVecKey&
 			printf("%2.3f ", weightedEsts[i]);
 		}
 	}
+
 	//for (unsigned i = 0; i < legalOptions.size(); i++) {
 	//  cout << "i " << i << "\n";
 	//  for (unsigned j = 0; j < decArray.size(); j++) {
@@ -540,107 +552,104 @@ int GameModerator::chooseInferenceMove(Processor* p, unsigned pid, VecVecVecKey&
 	//   for each infoset node n
 	//     val[m] += prob[n]*estVals[n][m]
 	// return argmax(val)
-
 	//return 0;
 }
 
-int GameModerator::chooseMCTSMove(Processor* p, unsigned pid, VecVecVecKey& obs, SetVecInt& infoSet,
-		WorldState& initState) {
-	assert(!infoSet.empty());
-	unsigned nOptions = -1;
-	bool firstOne = true;
-	VecVecFloat actionValueEsts(infoSet.size());
-	unsigned i = 0;
-	VecInt legalActions;
-	Node& root = Node::nodeVec()[0];
-	// For each node (specified by a sequence of moves from root)
-	for (SetVecInt::const_iterator itr = infoSet.begin(); itr != infoSet.end(); ++i, ++itr) {
-		const VecInt& sequence = *itr;
-		WorldState current = initState;
-		proc->apply(sequence, current);
-		assert(current.getWhoseTurn() == (int)pid);
-		legalActions = proc->legalOperators(current);
+//int GameModerator::chooseMCTSMove(Processor *p, unsigned pid, VecVecVecKey & obs, SetVecInt & infoSet,
+//		WorldState & initState) {
+//	assert(!infoSet.empty());
+//	unsigned nOptions = -1;
+//	bool firstOne = true;
+//	VecVecFloat actionValueEsts(infoSet.size());
+//	unsigned i = 0;
+//	VecInt legalActions;
+//	Node & root = Node::nodeVec()[0];
+//	// For each node (specified by a sequence of moves from root)
+//	for (SetVecInt::const_iterator itr = infoSet.begin(); itr != infoSet.end(); ++i, ++itr) {
+//		const VecInt& sequence = *itr;
+//		WorldState current = initState;
+//		proc->apply(sequence, current);
+//		assert(current.getWhoseTurn() == (int)pid);
+//		legalActions = proc->legalOperators(current);
+//
+//		if (firstOne) {
+//			firstOne = false;
+//			nOptions = legalActions.size();
+//		} else {
+//			assert(legalActions.size() == nOptions);
+//		}
+//		actionValueEsts[i].resize(nOptions);
+//		if (gmverbose)
+//			cout << "Running MCTS on active player: " << current.getWhoseTurn() << "\n";
+//		//proc->computePayoffs(current);
+//		//cout << "BEFORE: " << proc->asString(proc->payoffs,PAYOFFS) << "\n";
+//		root.initializeRoot(current);
+//		if (root.terminal) {
+//			if (gmverbose)
+//				cout << "INITIAL STATE\n";
+//			if (gmverbose)
+//				cout << proc->printPartialState(initState) << "\n";
+//			if (gmverbose)
+//				cout << "Root zeroed on initialization\n";
+//			if (gmverbose)
+//				cout << proc->printPartialState(Node::nodeVec()[0].ws) << "\n";
+//			assert(false);
+//			// Should have returned before here;
+//			// By definition of info sets, it cannot be ambiguous whether the game is over or not.
+//			// It is therefore not possible that some nodes in an information set are end of game
+//			// and some are not.
+//		}
+//		for (unsigned s = 0; s < Node::nSamples; s++) {
+//			if (gmverbose || false)
+//				cout << "Sample #" << s << "\n";
+//			// Should be able to delete this. If it wasn't terminal before, it shouldn't be now
+//			if (root.terminal) {
+//				//cout << "Root zeroed on " << s << "\n";
+//				assert(false);
+//				// Should have returned before here.
+//			}
+//			Node::nodeVec()[0].select();
+//		}
+//		//int choice = Node::nodeVec()[0].mctsChoice();
+//		assert(root.children.size() == nOptions);
+//		for (unsigned a = 0; a < nOptions; a++) {
+//			actionValueEsts[i][a] = root.children[a].valueEst;
+//		}
+//	}
+//	// Estimated values;
+//	static const bool decverbose = false || gmverbose;
+//	VecFloat sums(nOptions, 0.0f);
+//	for (unsigned a = 0; a < nOptions; a++) {
+//		if (decverbose)
+//			cout << proc->operatorIndexToString(root.children[a].actionId) << "; ";
+//
+//	}
+//	if (decverbose)
+//		cout << "\n";
+//
+//	for (unsigned i = 0; i < actionValueEsts.size(); i++) {
+//		for (unsigned a = 0; a < nOptions; a++) {
+//			if (decverbose)
+//				printf("%1.3f ", actionValueEsts[i][a]);
+//
+//			sums[a] += actionValueEsts[i][a];
+//		}
+//		if (decverbose)
+//			printf("\n");
+//
+//	}
+//	unsigned bestActionIndex = argMax(sums);
+//	int bestAction = legalActions[bestActionIndex];
+//	if (decverbose)
+//		cout << "Optimal decision: " << bestAction << " (" << proc->operatorIndexToString(bestAction) << ")\n";
+//
+//	//exit(0);
+//	//assert(false);
+//	return bestAction;
+//}
 
-		if (firstOne) {
-			firstOne = false;
-			nOptions = legalActions.size();
-		} else {
-			assert(legalActions.size() == nOptions);
-		}
-		actionValueEsts[i].resize(nOptions);
-		if (gmverbose)
-			cout << "Running MCTS on active player: " << current.getWhoseTurn() << "\n";
-		//proc->computePayoffs(current);
-		//cout << "BEFORE: " << proc->asString(proc->payoffs,PAYOFFS) << "\n";
-		root.initializeRoot(current);
-		if (root.terminal) {
-			if (gmverbose)
-				cout << "INITIAL STATE\n";
-			if (gmverbose)
-				cout << proc->printPartialState(initState) << "\n";
-			if (gmverbose)
-				cout << "Root zeroed on initialization\n";
-			if (gmverbose)
-				cout << proc->printPartialState(Node::nodeVec()[0].ws) << "\n";
-			assert(false);
-			// Should have returned before here;
-			// By definition of info sets, it cannot be ambiguous whether the game is over or not.
-			// It is therefore not possible that some nodes in an information set are end of game
-			// and some are not.
-		}
-		for (unsigned s = 0; s < Node::nSamples; s++) {
-			if (gmverbose || false)
-				cout << "Sample #" << s << "\n";
-			// Should be able to delete this. If it wasn't terminal before, it shouldn't be now
-			if (root.terminal) {
-				//cout << "Root zeroed on " << s << "\n";
-				assert(false);
-				// Should have returned before here.
-			}
-			Node::nodeVec()[0].select();
-		}
-		//int choice = Node::nodeVec()[0].mctsChoice();
-		assert(root.children.size() == nOptions);
-		for (unsigned a = 0; a < nOptions; a++) {
-			actionValueEsts[i][a] = root.children[a].valueEst;
-		}
-	}
-	// Estimated values;
-	static const bool decverbose = false || gmverbose;
-	VecFloat sums(nOptions, 0.0f);
-	for (unsigned a = 0; a < nOptions; a++) {
-		if (decverbose)
-			cout << proc->operatorIndexToString(root.children[a].actionId) << "; ";
-	}
-	if (decverbose)
-		cout << "\n";
-	for (unsigned i = 0; i < actionValueEsts.size(); i++) {
-		for (unsigned a = 0; a < nOptions; a++) {
-			if (decverbose)
-				printf("%1.3f ", actionValueEsts[i][a]);
-			sums[a] += actionValueEsts[i][a];
-		}
-		if (decverbose)
-			printf("\n");
-	}
-	unsigned bestActionIndex = argMax(sums);
-	int bestAction = legalActions[bestActionIndex];
-	if (decverbose)
-		cout << "Optimal decision: " << bestAction << " (" << proc->operatorIndexToString(bestAction) << ")\n";
-	//exit(0);
-	//assert(false);
-#ifdef INTERACTIVE
-	int dummy;
-	std::cin >> dummy;
-	if (dummy != -1) {
-		return legalActions[dummy];
-	}
-#endif
-	return bestAction;
-}
-
-void GameModerator::analyzeInfosetFailure(const VecInt& gameHistory, WorldState initState, WorldState current,
-		Processor* p, unsigned k) {
+void GameModerator::analyzeInfosetFailure(const VecInt & gameHistory, WorldState initState, WorldState current,
+		Processor *p, unsigned k) {
 	cout << "ANALYZE INFOSET FAILURE\n";
 	cout << p->printKnowledgeState(k) << std::endl;
 	ActionGraph ag(p, p->kb, p->opsByRev, initState, k);
@@ -657,6 +666,27 @@ void GameModerator::analyzeInfosetFailure(const VecInt& gameHistory, WorldState 
 	cout << "BRIEFLY\n";
 	cout << ag.asString(true) << "\n";
 	exit(0);
+}
+
+int GameModerator::chooseMoveHeuristic(Processor *p, const VecVecVecKey & obs, const SetVecInt & infoset,
+		const VecInt & legalOptions, const WorldState & initState, int nSamples) {
+	VecVecFloat decisionMatrix(infoset.size());
+	int i = 0;
+	for (SetVecInt::const_iterator itr = infoset.begin(); itr != infoset.end(); ++itr, ++i) {
+		decisionMatrix[i].resize(legalOptions.size());
+		VecInt seq = *itr;
+		int nextMoveIndex = seq.size();
+		seq.push_back(-1);
+		for (unsigned m = 0; m < legalOptions.size(); m++) {
+			seq[nextMoveIndex] = legalOptions[m];
+			WorldState current = initState;
+			p->apply(seq, current);
+			decisionMatrix[i][m] = p->getEstimatedValue(seq, current, obs);
+		}
+	}
+	VecFloat sums(legalOptions.size(), 0.0f);
+	int bestAction = getDecisionFromMatrix(legalOptions, decisionMatrix, sums);
+	return bestAction;
 }
 
 }

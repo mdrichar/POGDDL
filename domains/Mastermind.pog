@@ -1,5 +1,5 @@
 (define (domain mastermind)
-(:requirements :strips :typing pogddl :derived-predicates :fluents)
+(:requirements :strips :typing :pogddl :derived-predicates :fluents)
 (:types position item phase number other role)
 (:constants
 	chance p1 p2 - role

@@ -1,5 +1,5 @@
 (define (domain battleship)
-(:requirements :strips :typing pogddl :derived-predicates :fluents)
+(:requirements :strips :typing :pogddl :derived-predicates :fluents)
 (:types col phase position role row ship)
 (:constants
 	chance p1 p2 - role		
@@ -32,6 +32,7 @@
 	(nhits  ?p - role ?s - ship)		; number of hits per ship
 	(maxhits ?s - ship)			; # hits to sink each ship
 	(needtosink)				; # of ships needed to sink to win
+	(totalhits ?p - role)		; # of hits on opponent ships
 )
 
 ; Action for placing a ship.  Players alternate placing
@@ -456,6 +457,7 @@
 			(not (lastshot ?p ?c ?r))
 			(whoseturn ?o)
 			(increase (nhits ?o ?s) 1)
+			(increase (totalhits ?p) 1)
 			(observe (all (hit ?p ?s)))))
 			
 (:action declare-sunk
@@ -474,6 +476,7 @@
 			(not (lastshot ?p ?c ?r))
 			(whoseturn ?o)
 			(increase (shipssunk ?p) 1)
+			(increase (totalhits ?p) 1)
 			(observe (all (sunk ?p ?s)))))
 			
 ; A player wins when all five of the opponent's ships are sunk

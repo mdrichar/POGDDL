@@ -1,4 +1,4 @@
-SOURCES =  pddl+.cpp NewConditionController.cpp DebugWriteController.cpp ptree.cpp typecheck.cpp processor.cpp InitialStateVisitController.cpp ConditionController.cpp OperatorController.cpp  WorldState.cpp ActionGraph.cpp InfoSetGenerator.cpp Node.cpp GameModerator.cpp GameLogGenerator.cpp WorldStateFormatter.cpp PerformanceCounters.cpp
+SOURCES =  pddl+.cpp NewConditionController.cpp DebugWriteController.cpp ptree.cpp typecheck.cpp processor.cpp InitialStateVisitController.cpp ConditionController.cpp OperatorController.cpp  WorldState.cpp ActionGraph.cpp InfoSetGenerator.cpp Node.cpp GameModerator.cpp GameLogGenerator.cpp WorldStateFormatter.cpp PerformanceCounters.cpp FormatterFactory.cpp StaticEvaluationFunction.cpp StaticEvaluationFunctionFactory.cpp
 
 MYCODEDIR := .
 

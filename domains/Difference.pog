@@ -2,13 +2,13 @@
 (:requirements :strips :typing :pogddl :fluents)
 (:types card slot role phase)
 (:constants
-	dealer - slot
 	chance p1 p2 - role
 	drawing playing - phase
 	all others u - other)
 	
 (:predicates
 	(at ?c - card ?s - slot)
+	(center ?c - card)
 	(dealer ?c - card)
 	(owns ?p - role ?s - slot)
 	(inphase ?p - phase)
@@ -16,7 +16,7 @@
 	(oppof ?r ?other - role)
 	(pending ?p - role)
 	(empty ?s - slot)
-	(gameover)
+	(first ?r - role)
 
 )
 
@@ -44,13 +44,14 @@
 		(inphase playing)
 		(whoseturn ?p)
 		(at ?c ?s)
-		(observe (?p (drew ?p ?o ?s ?c)
-			  ?o (drew ?p ?o ?s u)))))
+		(observe (?p (drew ?p ?o ?s ?c))
+			  (?o (drew ?p ?o ?s u)))))
 
 (:action play
 :parameters (?p ?o - role ?s - slot ?c ?q - card)
 :precondition (and
 		(whoseturn ?p)
+		(oppof ?p ?o)
 		(inphase playing)
 		(owns ?p ?s)
 		(at ?c ?s)
@@ -73,7 +74,6 @@
 
 (:gain ?p - role 1
 	(and
-		(gameover)
 		(or
 			(and
 				(first ?p)

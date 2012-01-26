@@ -1,5 +1,5 @@
 (define (problem e1)
-(:domain endselection)
+(:domain endgame)
 (:objects
 	s1 s2 s3 s4 s5 s6 - slot
 	c1 c2 c3 c4 c5 c6 - card

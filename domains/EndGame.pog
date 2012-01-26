@@ -1,5 +1,5 @@
-(define (domain endselection)
-(:requirements :strips :typing pogddlddl :derived-predicates :fluents)
+(define (domain endgame)
+(:requirements :strips :typing :pogddl :derived-predicates :fluents)
 (:types card slot role phase)
 (:constants
 	dealer - slot
@@ -191,6 +191,7 @@
 			(whoseturn ?o)
 			(not (pending ?o))
 			(not (selected ?s))
+			(viewed ?s)
 			(decrease (score ?p) 2)
 			(observe (?p (shown ?p ?c ?s))
 				 (?o (shown ?p u ?s)))))

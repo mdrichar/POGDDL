@@ -8,40 +8,58 @@
 
 namespace VAL {
 
+
+
 class WorldStateFormatter {
 public:
   Processor* proc;
   WorldStateFormatter();
   virtual ~WorldStateFormatter();
   virtual void setProcessor(Processor* procIn);
-  virtual std::string asString(WorldState& ws) = 0;
+  virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb) = 0;
 };
 
 class DefaultWorldStateFormatter : public WorldStateFormatter {
 public:
   DefaultWorldStateFormatter();
   virtual ~DefaultWorldStateFormatter();
-  virtual std::string asString(WorldState& ws);
+  virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
 };
 
 class RackoWorldStateFormatter : public WorldStateFormatter {
 public:
-  unsigned slotCount;
-  unsigned cardCount;
 
-  RackoWorldStateFormatter(unsigned slotCountIn, unsigned cardCountIn);
+  RackoWorldStateFormatter();
   virtual ~RackoWorldStateFormatter();
-  virtual std::string asString(WorldState& ws);
+  virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
+
 };
 
 class BattleshipWorldStateFormatter : public WorldStateFormatter {
 public:
-  unsigned shipCount;
-  unsigned gridPointsPerSide;
 
-  BattleshipWorldStateFormatter(unsigned shipCountIn, unsigned gridPointsPerSideIn);
+  BattleshipWorldStateFormatter();
   virtual ~BattleshipWorldStateFormatter();
-  virtual std::string asString(WorldState& ws);
+  virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
+
+};
+
+class DifferenceWorldStateFormatter : public WorldStateFormatter {
+public:
+
+  DifferenceWorldStateFormatter();
+  virtual ~DifferenceWorldStateFormatter();
+  virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
+
+};
+
+class EndGameWorldStateFormatter : public WorldStateFormatter {
+public:
+
+  EndGameWorldStateFormatter();
+  virtual ~EndGameWorldStateFormatter();
+  virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
+
 };
 
 }

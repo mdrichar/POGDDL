@@ -217,7 +217,7 @@ typedef map< string, Bounds > StringToBounds;
 typedef map< string, VecStr> TypedIntToObject;
 typedef map< string, VecStr> StringToVecStrMap;
 typedef map< string, operator_*> StringToOperator;
-enum PlayerType {P_HUMAN, P_RANDOM, P_MCTS, P_MCTS_LIMITED, P_INFER};
+enum PlayerType {P_HUMAN, P_RANDOM, P_MCTS, P_MCTS_LIMITED, P_INFER, P_HEURISTIC};
 typedef vector<PlayerType> VecPlayerType;
 typedef std::map<string,PlayerType> StringToPlayerType;
 

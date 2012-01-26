@@ -9,10 +9,11 @@
 #include "WorldState.h"
 namespace VAL {
 
-enum ListType  {NUMERIC,OPERATOR,PREDICATE,REVELATION};
+enum ListType  {NUMERIC,OPERATOR,PREDICATE,REVELATION,LIST};
 class ConditionController;
 class NewConditionController;
 class WorldStateFormatter;
+class StaticEvaluationFunction;
 class Processor
 {
 public:
@@ -35,6 +36,7 @@ public:
 // Predicates
   bool isPredAlreadyPresent(const string& name);
   unsigned newPredHeadId(const string& name, unsigned nArgs);
+  int getPredId(const string predName);
   StringToInt predHeadTbl;
   //VecStr inversePreds;
   VecVecInt predParamTypeTbl;
@@ -46,6 +48,7 @@ public:
 // Functions
   StringToInt funcHeadTbl;
   VecStr inverseFuncs;
+  int getFunctionId(const string functionName);
   int fastFuncLookupByArgIndex(VecInt& intArgs, unsigned funcId, const VecInt& indices, const VecInt& args);
 
 // Facts
@@ -71,10 +74,10 @@ public:
   VecVecKey fullApply(int index, WorldState& ws);
 
 // Revelations
-  StringToInt revHeadTbl;
+  StringToInt obsHeadTbl;
   VecStr observationIntToString;
-  VecVecInt revParamTypeTbl; // revParamTypeTbl[i][j] gives the index of the type of the jth parameter to the the observations indexed by i
-  VecVecInt revParamTypeCardTbl; 
+  VecVecInt obsParamTypeTbl; // revParamTypeTbl[i][j] gives the index of the type of the jth parameter to the the observations indexed by i
+  VecVecInt obsParamTypeCardTbl; 
   bool isRevAlreadyPresent(const string& name);
   unsigned newRevelationHeadId(const string& name, unsigned nArgs);
   VecVecVecKey kb; // kb = knowledge base;  kb[t][k][i] is the ith part of the observation for player k at time t 
@@ -93,6 +96,7 @@ public:
 
 private:
   WorldStateFormatter* formatter;
+  StaticEvaluationFunction* evaluator;
     string observationToString(VecInt & currentObs);
 
 
@@ -164,6 +168,8 @@ public:
   const operator_list& operators;
   vector<operator_*> vecOps;
   StringToInt opHeadTbl;
+  VecStr operatorIntToString;
+  string getOperatorName(int opHeadId);
   VecStr getOperatorString(int index, const string& name, const VecStr& vars, const VecInt& mults); // deprecate?
   string getOperatorString(const string& name, const VecInt& args);
   int getOperatorIndex(const string& opName, const VecStr& args);
@@ -172,6 +178,7 @@ public:
   int getIndex(const StringToBounds& offsets, const PredicateMultTable& mults, const string& name, const VecInt& args);
   void decodeOperator(int index, string& oName, VecInt& oArgs, bool resize = true); // Convert the index (input) into the corresponding opName and integer args (output)
   string operatorIndexToString(int index);
+  VecInt operatorIndexToVector(int index);
   operator_* getOpFromIndex(int index);
   VecInt getOpArgs(int index);
 
@@ -209,16 +216,20 @@ public:
 
 // Game specific formatters
   void setFormatter(WorldStateFormatter* formatter);
-  string getFormattedState(const VecInt& gameHistory, WorldState& ws);
+  void setStaticEvaluationFunction(StaticEvaluationFunction* evaluator);
+  NumScalar getEstimatedValue(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
+  string getFormattedState(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
 
-// payoffs
-  void computePayoffs(WorldState& ws);
-  NumScalar sumPayoffs();
 
-// Infoset stuff
-  VecInt mutableFuncs; // Identify wich functions can be changed by operators
-  VecInt mutablePreds; // Identify which predicates can be changed by operators
-  VecSetVecInt opsByRev; 
+    // payoffs
+    void computePayoffs(WorldState & ws);
+    NumScalar sumPayoffs();
+    // Infoset stuff
+    VecInt mutableFuncs; // Identify wich functions can be changed by operators
+    VecInt mutablePreds; // Identify which predicates can be changed by operators
+    VecSetVecInt opsByRev;
+    string getDomainName() const;
+    void setDomainName(string domainName); 
   VecInt getPartialOperator(const VecInt& observation, const VecInt& argMapper);
   void sandbox2(const VecVecVecKey& kb, const VecSetVecInt& opsByRev);
 };

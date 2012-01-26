@@ -60,6 +60,12 @@ public:
   int getNRoles() const;
   int getWhoseTurn() const;
   
+  // API for use by Formatters and StaticEvaluators
+  bool getTruthValue(int headId, int arg1);
+  bool getTruthValue(int headId, int arg1, int arg2);
+  NumScalar getFluentValue(int headId);
+  NumScalar getFluentValue(int headId, int arg1);
+
 
 
 

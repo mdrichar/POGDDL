@@ -1,10 +1,10 @@
 SOURCES =  pddl+.cpp NewConditionController.cpp DebugWriteController.cpp ptree.cpp typecheck.cpp processor.cpp InitialStateVisitController.cpp ConditionController.cpp OperatorController.cpp  WorldState.cpp ActionGraph.cpp InfoSetGenerator.cpp Node.cpp GameModerator.cpp GameLogGenerator.cpp WorldStateFormatter.cpp PerformanceCounters.cpp FormatterFactory.cpp StaticEvaluationFunction.cpp StaticEvaluationFunctionFactory.cpp
-
+WTSOURCES = wtmain.cpp 
 MYCODEDIR := .
 
 # Directories to search for header files
 
-SEARCHDIRS := -iquote -I${MYCODEDIR} 
+SEARCHDIRS := -iquote -I${MYCODEDIR} -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4
 # Note that -I- should be -iquote for g++ version 4
 
 # makemake variables
@@ -30,7 +30,10 @@ CXX      := g++
 #CXXFLAGS  = ${DEPENDFLAGS} -ansi #-O3 -DNDEBUG #-pg -fprofile-arcs
 #CXXFLAGS  = ${DEPENDFLAGS} -ansi -O3 -pg -fprofile-arcs -ftest-coverage
 #CXXFLAGS  = ${DEPENDFLAGS} -ansi -g -pg -fprofile-arcs -ftest-coverage
+QTFLAGS = -D_REENTRANT -DQT_WEBKIT -DQT_NO_DEBUG -DQT_CORE_LIB -DQT_SHARED
 CXXFLAGS  = ${DEPENDFLAGS} -ansi -g 
+WTLIBS +=  -L/usr/lib/i386-linux-gnu -lwt -lwthttp -lboost_signals -lQtCore -lpthread
+
 #CXXFLAGS  = ${DEPENDFLAGS} -ansi -O3 -DNDEBUG 
 
 .SUFFIXES: .cpp .o .yacc .lex
@@ -42,7 +45,7 @@ CXXFLAGS  = ${DEPENDFLAGS} -ansi -g
 	${CXX} ${CPPFLAGS} ${CXXFLAGS} -c $< -o $@
 
 %.o : %.cpp
-	${CXX} ${CPPFLAGS} ${CXXFLAGS} -c $< -o $@
+	${CXX} ${CPPFLAGS} ${CXXFLAGS} $(QTFLAGS) $(SEARCHDIRS) -c $< -o $@
 
 %.o : %.cxx
 	${CXX} ${CPPFLAGS} ${CXXFLAGS} -c $< -o $@
@@ -82,8 +85,12 @@ JAR    := jar
 
 
 OBJS = $(SOURCES:.cpp=.o)
+WTOBJS = $(WTSOURCES:.cpp=.o)
 
-all: pogddl
+all: wtapp
+
+wtapp: $(OBJS) $(WTOBJS)
+	$(CXX) $(CXXFLAGS) $(QTFLAGS) -o wtapp $(OBJS) $(WTOBJS) $(WTLIBS)
 
 pogddl: $(OBJS) mainith.o
 	$(CXX) $(CXXFLAGS) -o sgl $(OBJS) mainith.o

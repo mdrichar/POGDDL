@@ -220,6 +220,8 @@ public:
   NumScalar getEstimatedValue(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
   string getFormattedState(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
 
+  // history
+  string getHistory(const VecInt& gameHistory);
 
     // payoffs
     void computePayoffs(WorldState & ws);

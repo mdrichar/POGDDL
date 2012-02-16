@@ -1479,9 +1479,11 @@ int Processor::getPredId(const string predName) {
 
 string Processor::getHistory(const VecInt & gameHistory) {
 	std::ostringstream os;
+	os << "History\n";
 	for (unsigned i = 1; i < gameHistory.size(); i++) {
 		os << this->operatorIndexToString(gameHistory[i]);
 	}
+	os << "EndHistory\n";
 	return os.str();
 }
 

@@ -16,7 +16,13 @@
 #include "GameLogGenerator.h"
 #include "processor.h"
 #include <string>
+#include <iostream>
 #include <boost/version.hpp>
+
+#include "WorldStateFormatter.h"
+#include "FormatterFactory.h"
+#include "StaticEvaluationFunctionFactory.h"
+#include "StaticEvaluationFunction.h"
 
 char* current_filename; // This is only necessary because parse_error.h declares it extern; can be worked around
 
@@ -39,8 +45,8 @@ private:
 	WComboBox* instance;
 	WContainerWidget* selectors;
 	WTabWidget* tabs;
-	WTextArea *bits;
-	WTextArea *formatted;
+	WTextArea *stateBits;
+	WTextArea *formattedState;
 	WTextArea *history;
 	WPushButton* start;
 
@@ -94,18 +100,18 @@ HelloApplication::HelloApplication(const WEnvironment& env) :
 
 	root()->addWidget(new WBreak()); // insert a line break
 	tabs = new WTabWidget(root());
-	bits = new WTextArea();
-	bits->setColumns(100);
-	bits->setRows(45);
-	formatted = new WTextArea();
-	formatted->setColumns(100);
-	formatted->setRows(45);
+	stateBits = new WTextArea();
+	stateBits->setColumns(100);
+	stateBits->setRows(45);
+	formattedState = new WTextArea();
+	formattedState->setColumns(100);
+	formattedState->setRows(45);
 	history = new WTextArea();
 	history->setColumns(100);
 	history->setRows(45);
 
-	tabs->addTab(bits, "Bits");
-	tabs->addTab(formatted, "State");
+	tabs->addTab(stateBits, "Bits");
+	tabs->addTab(formattedState, "State");
 	tabs->addTab(history,"History");
 	tabs->setStyleClass("tabwidget");
 	root()->addWidget(new WBreak()); // insert a line break
@@ -154,6 +160,11 @@ void HelloApplication::startGame() {
 	std::string instance = "../problems/EndGame/endgame-1.pog";
 	analysis* an_analysis = GameParser::parseGame(domain, instance);
 	this->p = new VAL::Processor(an_analysis);
+	WorldStateFormatter* formatter = FormatterFactory::createFormatter(p);
+	formatter->setProcessor(p);
+	StaticEvaluationFunction* evaluator = StaticEvaluationFunctionFactory::createEvaluator(p);
+	evaluator->setProcessor(p);
+
 	this->vpt = VecPlayerType(p->initialWorld.getNRoles());
 	//vpt[0] = P_HUMAN;
 	vpt[0] = P_RANDOM; // Chance player
@@ -226,9 +237,12 @@ inline void HelloApplication::continuePlay()
 		}
 	}
 	// update tabs
-	this->bits->setText(this->p->printState(current));
+	this->stateBits->setText(this->p->printState(current));
+	std::cout << this->p->printState(current) << std::endl;
 	this->history->setText(this->p->getHistory(this->gameHistory));
-	//this->formatted->setText(this->p->getFormattedState(this->gameHistory,current,this->p->kb));
+	std::cout << this->p->getHistory(this->gameHistory) << std::endl;
+	this->formattedState->setText(this->p->getFormattedState(this->gameHistory,current,this->p->kb));
+	std::cout << "FormattedState: "<< this->p->getFormattedState(this->gameHistory,current,this->p->kb) << std::endl;
 
 }
 

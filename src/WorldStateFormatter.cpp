@@ -126,7 +126,8 @@ BattleshipWorldStateFormatter::~BattleshipWorldStateFormatter() {
 BattleshipWorldStateFormatter::BattleshipWorldStateFormatter() {
 }
 
-std::string BattleshipWorldStateFormatter::asString(const VecInt& gameHistory, WorldState & ws, const VecVecVecKey& kb) {
+std::string BattleshipWorldStateFormatter::asString(const VecInt& gameHistory, WorldState & ws,
+		const VecVecVecKey& kb) {
 	ostringstream os;
 	//os << "Battleship World with " << shipCount << " ships and " << gridPointsPerSide << " cards";
 	//os << " head id for 'at': " << proc->predHeadTbl["at"];
@@ -231,49 +232,44 @@ VAL::EndGameWorldStateFormatter::EndGameWorldStateFormatter() {
 VAL::EndGameWorldStateFormatter::~EndGameWorldStateFormatter() {
 }
 
-std::string VAL::EndGameWorldStateFormatter::asString(const VecInt& gameHistory, WorldState & ws, const VecVecVecKey& kb) {
+std::string VAL::EndGameWorldStateFormatter::asString(const VecInt& gameHistory, WorldState & ws,
+		const VecVecVecKey& kb) {
 	ostringstream os;
 	int scoreIndex = proc->getFunctionId("score");
 
 	int cardCount = proc->typeCardinalities[proc->typeNameIds["card"]];
 //	int slotCount = proc->typeCardinalities[proc->typeNameIds["slot"]];
 
-	VecInt cardRow(cardCount);
+	VecInt cardRow(cardCount, -1);
 	NumScalar p1Score = ws.getFluentValue(scoreIndex, 1);
 	NumScalar p2Score = ws.getFluentValue(scoreIndex, 2);
 	os << "Score 1: " << p1Score << " Score 2: " << p2Score << "\n";
-	assert((unsigned)cardCount <= gameHistory.size());
-	for(unsigned i = 1; i <= (int)cardRow.size(); i++) {
-		int index = gameHistory[i];
-		VecInt args = proc->operatorIndexToVector(index);
+	//assert((unsigned)cardCount <= gameHistory.size());
+	if ((unsigned) cardCount < gameHistory.size()) {
+		for (unsigned i = 1; i <= (int) cardRow.size(); i++) {
+			int index = gameHistory[i];
+			VecInt args = proc->operatorIndexToVector(index);
 //		os << proc->getOperatorName(args[0]) << " " << proc->asString(args) << "\n";
-		cardRow[i-1] = args[3]+1; // c0=1 c1=2, etc.
+			cardRow[i - 1] = args[3] + 1; // c0=1 c1=2, etc.
+		}
 	}
-	os << proc->asString(cardRow,LIST) << "\n";
+	os << proc->asString(cardRow, LIST) << "\n";
 
 	return os.str();
 
 }
 
-VAL::DifferenceWorldStateFormatter::DifferenceWorldStateFormatter()
-{
+VAL::DifferenceWorldStateFormatter::DifferenceWorldStateFormatter() {
 }
 
-
-
-VAL::DifferenceWorldStateFormatter::~DifferenceWorldStateFormatter()
-{
+VAL::DifferenceWorldStateFormatter::~DifferenceWorldStateFormatter() {
 }
 
-
-
-std::string VAL::DifferenceWorldStateFormatter::asString(const VecInt & gameHistory, WorldState & ws, const VecVecVecKey & kb)
-{
+std::string VAL::DifferenceWorldStateFormatter::asString(const VecInt & gameHistory, WorldState & ws,
+		const VecVecVecKey & kb) {
 	ostringstream os;
 	int scoreIndex = proc->getFunctionId("score");
 	int ownsIndex = proc->getPredId("owns");
-
-
 
 	int cardCount = proc->typeCardinalities[proc->typeNameIds["card"]];
 	int slotCount = proc->typeCardinalities[proc->typeNameIds["slot"]];
@@ -293,7 +289,5 @@ std::string VAL::DifferenceWorldStateFormatter::asString(const VecInt & gameHist
 
 	return os.str();
 }
-
-
 
 // VAL

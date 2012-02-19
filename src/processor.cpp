@@ -102,7 +102,7 @@ void Processor::add(VecSetInt& vss, int key, int value) {
 
 void Processor::ensureCapacity(VecSetInt& vss, int neededIndex) {
 	assert(neededIndex >= 0);
-	if ((int) ((((((((((vss.size())))))))))) <= neededIndex)
+	if ((int) (((((((((((vss.size()))))))))))) <= neededIndex)
 		vss.resize(neededIndex + 1);
 
 }
@@ -379,7 +379,7 @@ VecInt Processor::legalOperators(WorldState & partialWorld) {
 
 		VecInt & argMaxes = (*itr)->argMaxes;
 		ncc.args = VecInt((*itr)->getArgSizeNeeded(), -1);
-		int nParams = (int) (((((((((((*itr)->parameters->size()))))))))));
+		int nParams = (int) ((((((((((((*itr)->parameters->size())))))))))));
 		if (verbose)
 			cout << "OP: " << opName << " argssize: " << ncc.args.size() << "\n";
 
@@ -391,7 +391,7 @@ VecInt Processor::legalOperators(WorldState & partialWorld) {
 		}
 		int ptr = 0;
 		while (ptr >= 0) {
-			if (ptr >= (int) ((((((((((nParams))))))))))) {
+			if (ptr >= (int) (((((((((((nParams)))))))))))) {
 				//cout << "OP: " << opName << " ";
 				ncc.truthValue = KNOWN_FALSE;
 				//copy(ncc.args.begin(),ncc.args.end(),std::ostream_iterator<int>(cout," ")); cout << "\n";
@@ -456,7 +456,7 @@ void Processor::processOperators() {
 		string opName = (*itr)->name->getName();
 		opHeadTbl[opName] = opId;
 		operatorIntToString.push_back(opName);
-		opsFromParser[opName] = (operator_*) (((((((((((*itr))))))))))); // Be able to lookup the operator structure by its name
+		opsFromParser[opName] = (operator_*) ((((((((((((*itr)))))))))))); // Be able to lookup the operator structure by its name
 		//cout << "OP: " << opName << " ";
 		//var_symbol_list::const_iterator sitr = (*itr)->parameters->begin();
 		for (var_symbol_list::const_iterator sitr = (*itr)->parameters->begin(); sitr != (*itr)->parameters->end();
@@ -478,7 +478,7 @@ void Processor::processOperators() {
 			differential = 1;
 		} else {
 			mults[mults.size() - 1] = 1; // Identity multiplier for last argument
-			for (int m = (int) ((((((((((mults.size())))))))))) - 2; m >= 0; m--) {
+			for (int m = (int) (((((((((((mults.size()))))))))))) - 2; m >= 0; m--) {
 				mults[m] = mults[m + 1] * typeTbl[argTypes[m + 1]].size();
 				//  count *= typeTbl[argTypes[m]].size();
 			}
@@ -564,7 +564,7 @@ void Processor::processPredicates(const pred_decl_list & predicates) {
 		if (!mults.empty()) {
 			mults[mults.size() - 1] = 1; // Identity multiplier for last argument
 			int count = typeTbl[argTypes[mults.size() - 1]].size();
-			for (int m = (int) ((((((((((mults.size())))))))))) - 2; m >= 0; m--) {
+			for (int m = (int) (((((((((((mults.size()))))))))))) - 2; m >= 0; m--) {
 				mults[m] = mults[m + 1] * typeTbl[argTypes[m + 1]].size();
 				count *= typeTbl[argTypes[m]].size();
 			}
@@ -1400,7 +1400,7 @@ string Processor::observationToString(VecInt & currentObs) {
 	os << "(" << this->observationIntToString[currentObs[0]];
 	int observationHeadId = currentObs[0];
 	VecInt & obsParamTypeIds = this->obsParamTypeTbl[observationHeadId];
-	for (int j = 1; j < (int) (((((((((currentObs.size()))))))))); j++) {
+	for (int j = 1; j < (int) ((((((((((currentObs.size())))))))))); j++) {
 		os << " ";
 		int paramIndex = j - 1;
 		int paramTypeId = obsParamTypeIds[paramIndex];
@@ -1481,9 +1481,19 @@ string Processor::getHistory(const VecInt & gameHistory) {
 	std::ostringstream os;
 	os << "History\n";
 	for (unsigned i = 1; i < gameHistory.size(); i++) {
-		os << this->operatorIndexToString(gameHistory[i]);
+		os << this->operatorIndexToString(gameHistory[i]) << "\n";
 	}
 	os << "EndHistory\n";
+	return os.str();
+}
+
+// Does the same things as getHistory, so these could be combined
+string Processor::getFormattedLegalMoves(const VecInt & moves) {
+	std::ostringstream os;
+	os << "Legal Moves\n";
+	for (unsigned i = 0; i < moves.size(); i++) {
+		os << i << " " << this->operatorIndexToString(moves[i]) << "\n";
+	}
 	return os.str();
 }
 
@@ -1535,7 +1545,7 @@ int Processor::getFunctionId(const string functionName) {
 
 string Processor::getFormattedState(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb) {
 	std::ostringstream os;
-	os << "Game History: " << asString(gameHistory) << "\n";
+	os << "Game History: " << this->getHistory(gameHistory) << "\n";
 	os << formatter->asString(gameHistory, ws, kb);
 	return os.str();
 }

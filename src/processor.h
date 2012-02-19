@@ -134,6 +134,7 @@ public:
   void processOperators();
   void processGains();
   VecInt legalOperators(WorldState& partialWorld);
+  string getFormattedLegalMoves(const VecInt& moves);
   //VecInt legalOperators(VecInt& partialOp, WorldState& partialWorld, VecInt& prePos, VecInt& preNeg);
   void processPredicates(const pred_decl_list& predicates);
   void processFunctions(const func_decl_list& functions);

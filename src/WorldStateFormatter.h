@@ -62,6 +62,15 @@ public:
 
 };
 
+class GopsWorldStateFormatter : public WorldStateFormatter {
+public:
+
+  GopsWorldStateFormatter();
+  virtual ~GopsWorldStateFormatter();
+  virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
+
+};
+
 }
 
 #endif

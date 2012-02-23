@@ -31,6 +31,8 @@ WorldStateFormatter *FormatterFactory::createFormatter(Processor *proc) {
 		result = new DifferenceWorldStateFormatter;
 	} else if (domainName == "endgame") {
 		result = new EndGameWorldStateFormatter;
+	} else if (domainName == "gops") {
+		result = new GopsWorldStateFormatter;
 	} else {
 		result = new DefaultWorldStateFormatter;
 	}

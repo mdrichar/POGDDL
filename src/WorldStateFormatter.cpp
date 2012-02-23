@@ -269,16 +269,16 @@ std::string VAL::DifferenceWorldStateFormatter::asString(const VecInt & gameHist
 		const VecVecVecKey & kb) {
 	ostringstream os;
 	int scoreIndex = proc->getFunctionId("score");
-	int ownsIndex = proc->getPredId("owns");
+	//int ownsIndex = proc->getPredId("owns");
 
-	int cardCount = proc->typeCardinalities[proc->typeNameIds["card"]];
-	int slotCount = proc->typeCardinalities[proc->typeNameIds["slot"]];
+//	int cardCount = proc->typeCardinalities[proc->typeNameIds["card"]];
+//	int slotCount = proc->typeCardinalities[proc->typeNameIds["slot"]];
 
-	VecInt cardRow(cardCount);
+//	VecInt cardRow(cardCount);
 	NumScalar p1Score = ws.getFluentValue(scoreIndex, 1);
 	NumScalar p2Score = ws.getFluentValue(scoreIndex, 2);
 	os << "Score 1: " << p1Score << " Score 2: " << p2Score << "\n";
-	assert((unsigned)cardCount <= gameHistory.size());
+//	assert((unsigned)cardCount <= gameHistory.size());
 //	for(unsigned i = 1; i <= (int)cardRow.size(); i++) {
 //		int index = gameHistory[i];
 //		VecInt args = proc->operatorIndexToVector(index);
@@ -286,6 +286,87 @@ std::string VAL::DifferenceWorldStateFormatter::asString(const VecInt & gameHist
 //		cardRow[i-1] = args[3]+1; // c0=1 c1=2, etc.
 //	}
 //	os << proc->asString(cardRow,LIST) << "\n";
+
+	return os.str();
+}
+
+VAL::GopsWorldStateFormatter::GopsWorldStateFormatter() {
+}
+
+VAL::GopsWorldStateFormatter::~GopsWorldStateFormatter() {
+}
+
+std::string VAL::GopsWorldStateFormatter::asString(const VecInt & gameHistory, WorldState & ws,
+		const VecVecVecKey & kb) {
+	ostringstream os;
+	int scoreIndex = proc->getFunctionId("score");
+	string oName;
+	VecInt oArgs;
+	int slotCount = proc->typeCardinalities[proc->typeNameIds["slot"]];
+	int biddingRoundCount = (slotCount - 1) / 3; // Subtract 1 for dealer, divide by 3 because for every bidding round, there
+	// is the card to bid on plus one card per player to bid with
+	VecVecInt startingHands(3);
+	VecVecInt results(3);
+	for (unsigned i = 0; i < 3; i++) {
+		startingHands[i] = VecInt(biddingRoundCount, 0);
+		results[i] = VecInt(biddingRoundCount, 0);
+	}
+	int biddingRoundId = 0;
+	int currentBiddable = -1;
+	for (unsigned i = 1; i < gameHistory.size(); i++) {
+		proc->decodeOperator(gameHistory[i], oName, oArgs, true);
+		int cardId = oArgs[0] + 1;
+		if (oName == "deal") {
+			//os << i << " Deal " << (oArgs[0] + 1) << "\n";
+			if (i <= biddingRoundCount) {
+				startingHands[0][i - 1] = cardId;
+			} else {
+				int pid = 2 - ((i - biddingRoundCount - 1) % 2);
+				startingHands[pid][(i - biddingRoundCount - 1) / 2] = cardId;
+			}
+		} else if (oName == "announce") {
+			currentBiddable = cardId;
+		} else if (oName == "bid1") {
+			results[1][biddingRoundId] = cardId;
+		} else if (oName == "bid2") {
+			results[2][biddingRoundId] = cardId;
+		} else if (oName == "determine") {
+			int p1Bid = oArgs[0] + 1;
+			int p2Bid = oArgs[1] + 1;
+			results[0][biddingRoundId] = (p2Bid > p1Bid) + 1; // 1 if p1 won it; 2 if p2 won it
+			biddingRoundId++;
+		}
+	}
+
+	std::string labels[] = { "bids", "p1", "p2" };
+	for (unsigned i = 0; i < 3; i++) {
+		if (i > 0 && i != ws.getWhoseTurn()) continue; // Don't print the other guys cards
+		os << labels[i] << " ";
+		for (int j = 0; j < biddingRoundCount; j++) {
+			os << startingHands[i][j] << " ";
+		}
+		os << "\n";
+	}
+
+	os << "\n";
+	labels[0] = "W ";
+	for (unsigned i = 0; i < 3; i++) {
+		os << labels[i] << " ";
+		for (int j = 0; j < biddingRoundId; j++) {
+			os << results[i][j] << " ";
+		}
+		os << "\n";
+	}
+	os << "Currently bidding on: " << currentBiddable << "\n";
+//	int ownsIndex = proc->getPredId("owns");
+
+//	int cardCount = proc->typeCardinalities[proc->typeNameIds["card"]];
+//	int slotCount = proc->typeCardinalities[proc->typeNameIds["slot"]];
+
+//	VecInt cardRow(cardCount);
+	NumScalar p1Score = ws.getFluentValue(scoreIndex, 1);
+	NumScalar p2Score = ws.getFluentValue(scoreIndex, 2);
+	os << "Score 1: " << p1Score << " Score 2: " << p2Score << "\n";
 
 	return os.str();
 }

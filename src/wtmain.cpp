@@ -50,11 +50,12 @@ private:
 	WContainerWidget* selectors;
 	WContainerWidget* humanSelector;
 	WTabWidget* tabs;
-	WTextArea *rules;
-	WTextArea *stateBits;
-	WTextArea *formattedState;
-	WTextArea *history;
-	WSelectionBox *options;
+	WTextArea *rules;			// Display the domain file for the game
+	WTextArea *init;			// Display the initial conditions for the game
+	WTextArea *stateBits;		// Display game state as 1s and 0s
+	WTextArea *formattedState;  // Display game state in human readable format
+	WTextArea *history;			// Display list of actions taken so far in the game
+	WSelectionBox *options;		// Display legal moves
 	WPushButton* play;
 	WPushButton* start;
 
@@ -116,7 +117,9 @@ HelloApplication::HelloApplication(const WEnvironment& env) :
 	rules = new WTextArea();
 	rules->setColumns(100);
 	rules->setRows(45);
-
+	init = new WTextArea();
+	init->setColumns(100);
+	init->setRows(45);
 
 	stateBits = new WTextArea();
 	stateBits->setColumns(100);
@@ -133,6 +136,7 @@ HelloApplication::HelloApplication(const WEnvironment& env) :
 	history->setRows(45);
 
 	tabs->addTab(rules,"Rules");
+	tabs->addTab(init,"Initial State");
 	tabs->addTab(stateBits, "Bits");
 	tabs->addTab(humanSelector, "Formatted State");
 	tabs->addTab(history, "Game History");
@@ -183,8 +187,9 @@ void HelloApplication::addSelector() {
 void HelloApplication::startGame() {
 	//Processor::checkPayoffs = false; glg.generateGames(string("../logs/EndGame/endgame"), string("../domains/EndGame.pog"), string("../problems/EndGame/endgame-1.pog"), 10);
 	glg.logString = "defaultLog";
-	std::string domain = "../domains/EndGame.pog";
-	std::string instance = "../problems/EndGame/endgame-1.pog";
+	std::string domain = "../domains/Gops.pog";
+	std::string instance = "../problems/Gops/gops-4.0.pog";
+	Processor::checkPayoffs = false;
 	this->populateRulesTab(domain,instance);
 	analysis* an_analysis = GameParser::parseGame(domain, instance);
 
@@ -338,10 +343,12 @@ inline void HelloApplication::optionSelected()
 //	}
 	int newIndex = options->currentIndex();
 	if (newIndex == this->lastSelected) {
+		cout << "Second click\n";
 		this->humanPlayMove();
+	} else {
+		cout << "Setting: " << options->currentIndex() << "\n";
+		this->lastSelected = newIndex;
 	}
-	this->lastSelected = newIndex;
-//	cout << "Selected: " << options->currentIndex() << "\n";
 }
 
 inline void HelloApplication::populateRulesTab(const string & domain, const string & instance)
@@ -349,6 +356,8 @@ inline void HelloApplication::populateRulesTab(const string & domain, const stri
 	string domainLines = Utilities::file_as_string(domain);
 //	cout << domainLines << std::endl;
 	this->rules->setText(domainLines);
+	string initLines = Utilities::file_as_string(instance);
+	this->init->setText(initLines);
 
 }
 

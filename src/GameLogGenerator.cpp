@@ -144,7 +144,7 @@ void GameLogGenerator::generateGames(const string& logString, const string& doma
 	int nGamesPlayed = 0;
 	GameModerator gm(p, p->initialWorld, vpt);
 	FileGameLogger fileGameLogger(logString);
-	VecPayoff payoffs = gm.playManyGames((int) nGamesToPlay, 0, 1, nGamesPlayed, fileGameLogger);
+	VecPayoff payoffs = gm.playManyGames(p, vpt, (int) nGamesToPlay, 0, 1, nGamesPlayed, fileGameLogger);
 	cout << "Totals: " << p->asString(payoffs) << "\n";
 	delete an_analysis;
 	delete this->p;

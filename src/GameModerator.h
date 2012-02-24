@@ -20,24 +20,24 @@ public:
 	VecPlayerType players;
 
 	GameModerator(Processor* p, WorldState& initState_, VecPlayerType& playerIds);
-	VecPayoff playGame(int seed = 0);
-	VecPayoff playGame(int seed, GameLogger& gameLogger);
-	VecPayoff playManyGames(int n, int rank, int size, int& nGamesPlayed, GameLogger& logger);
-	int chooseMove(PlayerType pt, Processor* p, VecInt& canDo, unsigned pid, VecVecVecKey& obs, WorldState& initState,
+	static VecPayoff playGame(Processor* p, const VecPlayerType& players, int seed = 0);
+	static VecPayoff playGame(Processor* p, const VecPlayerType& players, int seed, GameLogger& gameLogger);
+	static VecPayoff playManyGames(Processor* proc, const VecPlayerType& players, int n, int rank, int size, int& nGamesPlayed, GameLogger& logger);
+	static int chooseMove(PlayerType pt, Processor* p, VecInt& canDo, unsigned pid, VecVecVecKey& obs, WorldState& initState,
 			int nSamples, int oppSamples);
-	int chooseMCTSMove(Processor* p, unsigned pid, VecVecVecKey& obs, SetVecInt& infoSet, WorldState& initState);
-	int chooseInferenceMove(Processor* p, unsigned pid, VecVecVecKey& obs, SetVecInt& infoset,
+	static int chooseMCTSMove(Processor* p, unsigned pid, VecVecVecKey& obs, SetVecInt& infoSet, WorldState& initState);
+	static int chooseInferenceMove(Processor* p, unsigned pid, VecVecVecKey& obs, SetVecInt& infoset,
 			const VecInt& legalOptions, WorldState& initState, int nSamples, int oppSamples);
-	int chooseHumanMove(Processor* p, const VecInt& legalActions, WorldState& initState);
-	void analyzeInfosetFailure(const VecInt& gameHistory, WorldState initState, WorldState current, Processor* p,
+	static int chooseHumanMove(Processor* p, const VecInt& legalActions, WorldState& initState);
+	static void analyzeInfosetFailure(const VecInt& gameHistory, WorldState initState, WorldState current, Processor* p,
 			unsigned k);
 
-	VecFloat mctsExplore(const VecInt& seq, const WorldState& initState, Processor* p, int nSamples = -1); // use Node::nSamples by default
-	VecVecFloat getDecisionMatrix(const SetVecInt& infoset, const WorldState& initState, Processor* p, int nSamples);
-	int getDecisionFromMatrix(const VecInt& legalOptions, const VecVecFloat& vvf, VecFloat& sums);
-	int chooseMoveMCTS(Processor* p, const VecVecVecKey& obs, const SetVecInt& infoset, const VecInt& legalOptions,
+	static VecFloat mctsExplore(const VecInt& seq, const WorldState& initState, Processor* p, int nSamples = -1); // use Node::nSamples by default
+	static VecVecFloat getDecisionMatrix(const SetVecInt& infoset, const WorldState& initState, Processor* p, int nSamples);
+	static int getDecisionFromMatrix(Processor* proc, const VecInt& legalOptions, const VecVecFloat& vvf, VecFloat& sums);
+	static int chooseMoveMCTS(Processor* p, const VecVecVecKey& obs, const SetVecInt& infoset, const VecInt& legalOptions,
 			const WorldState& initState, int nSamples);
-	int chooseMoveHeuristic(Processor* p, const VecVecVecKey& obs, const SetVecInt& infoset, const VecInt& legalOptions,
+	static int chooseMoveHeuristic(Processor* p, const VecVecVecKey& obs, const SetVecInt& infoset, const VecInt& legalOptions,
 			const WorldState& initState, int nSamples);
 };
 

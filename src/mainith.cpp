@@ -326,7 +326,7 @@ int main(int argc, char * argv[]) {
 	formatter->setProcessor(&p);
 	StaticEvaluationFunction* evaluator = StaticEvaluationFunctionFactory::createEvaluator(&p);
 	evaluator->setProcessor(&p);
-	VecPayoff payoffs = gm.playManyGames(nGames, rank, size, nGamesPlayed, defaultGameLogger);
+	VecPayoff payoffs = gm.playManyGames(&p, vpt, nGames, rank, size, nGamesPlayed, defaultGameLogger);
 	cout << "Totals: " << p.asString(payoffs) << "\n";
 	delete formatter;
 	delete evaluator;

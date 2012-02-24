@@ -26,7 +26,9 @@
 #include "StaticEvaluationFunctionFactory.h"
 #include "StaticEvaluationFunction.h"
 #include "ActionGraph.h"
+#include "GameModerator.h"
 #include "Utilities.h"
+#include "Node.h"
 
 char* current_filename; // This is only necessary because parse_error.h declares it extern; can be worked around
 
@@ -50,14 +52,15 @@ private:
 	WContainerWidget* selectors;
 	WContainerWidget* humanSelector;
 	WTabWidget* tabs;
-	WTextArea *rules;			// Display the domain file for the game
-	WTextArea *init;			// Display the initial conditions for the game
-	WTextArea *stateBits;		// Display game state as 1s and 0s
-	WTextArea *formattedState;  // Display game state in human readable format
-	WTextArea *history;			// Display list of actions taken so far in the game
-	WSelectionBox *options;		// Display legal moves
+	WTextArea *rules; // Display the domain file for the game
+	WTextArea *init; // Display the initial conditions for the game
+	WTextArea *stateBits; // Display game state as 1s and 0s
+	WTextArea *formattedState; // Display game state in human readable format
+	WTextArea *history; // Display list of actions taken so far in the game
+	WSelectionBox *options; // Display legal moves
 	WPushButton* play;
 	WPushButton* start;
+	VecNode actualNodes;
 
 	// To be encapsulated
 	GameLogGenerator glg;
@@ -66,7 +69,9 @@ private:
 	WorldState current;
 	VecInt gameHistory;
 	VecVecVecKey playerObs;
-    int lastSelected;
+	int lastSelected;
+	int nSamples;
+	int nOppSamples;
 
 	void updateStateDescriptionWindows();
 	void addSelector();
@@ -135,8 +140,8 @@ HelloApplication::HelloApplication(const WEnvironment& env) :
 	history->setColumns(100);
 	history->setRows(45);
 
-	tabs->addTab(rules,"Rules");
-	tabs->addTab(init,"Initial State");
+	tabs->addTab(rules, "Rules");
+	tabs->addTab(init, "Initial State");
 	tabs->addTab(stateBits, "Bits");
 	tabs->addTab(humanSelector, "Formatted State");
 	tabs->addTab(history, "Game History");
@@ -165,6 +170,8 @@ HelloApplication::HelloApplication(const WEnvironment& env) :
 	moveChooser->enterPressed().connect(boost::bind(&HelloApplication::greet, this));
 
 	this->gameHistory.push_back(-1); // no action at t=0
+	nSamples = 50;
+	nOppSamples = 100;
 }
 
 void HelloApplication::addSelector() {
@@ -190,10 +197,11 @@ void HelloApplication::startGame() {
 	std::string domain = "../domains/Gops.pog";
 	std::string instance = "../problems/Gops/gops-4.0.pog";
 	Processor::checkPayoffs = false;
-	this->populateRulesTab(domain,instance);
+	this->populateRulesTab(domain, instance);
 	analysis* an_analysis = GameParser::parseGame(domain, instance);
 
 	this->p = new VAL::Processor(an_analysis);
+
 	WorldStateFormatter* formatter = FormatterFactory::createFormatter(p);
 	formatter->setProcessor(p);
 	StaticEvaluationFunction* evaluator = StaticEvaluationFunctionFactory::createEvaluator(p);
@@ -202,12 +210,19 @@ void HelloApplication::startGame() {
 	this->vpt = VecPlayerType(p->initialWorld.getNRoles());
 	//vpt[0] = P_HUMAN;
 	vpt[0] = P_RANDOM; // Chance player
-	vpt[1] = P_RANDOM;
+	vpt[1] = P_MCTS;
 	if (vpt.size() == 3) {
 		vpt[2] = P_HUMAN;
 	}
 	this->current = this->p->initialWorld;
+	ActionGraph::fluentHistory.resize(1);
 	this->playerObs = VecVecVecKey(p->initialWorld.getNRoles());
+	this->options->hide();
+	srand(2650);
+
+	Node::nodes = &(this->actualNodes);
+	Node::nodeVec().resize(10000);
+	Node::gproc = p;
 	continuePlay();
 
 }
@@ -249,16 +264,15 @@ int main(int argc, char **argv) {
 	return WRun(argc, argv, func);
 }
 
-
-
 void HelloApplication::updateStateDescriptionWindows() {
 	VecInt canDo = this->p->legalOperators(current);
 	options->clear();
 	for (unsigned i = 0; i < canDo.size(); i++) {
 		lastSelected = -1;
 		options->addItem(this->p->operatorIndexToString(canDo[i]));
-		int rowsToShow = std::min((unsigned)20,canDo.size());
+		int rowsToShow = std::min((unsigned) 20, canDo.size());
 		options->setVerticalSize(rowsToShow);
+		options->show();
 	}
 	string legalMoveString = this->p->getFormattedLegalMoves(canDo);
 	// update tabs
@@ -283,8 +297,8 @@ inline void HelloApplication::continuePlay() {
 		if (sumPayoffs > 0 || canDo.empty()) {
 			gameOver = true;
 			// Game over; Display final info
-				os << "Game Over\n";
-				os << "Payoffs: " << this->p->asString(this->p->payoffs) << "\n";
+			os << "Game Over\n";
+			os << "Payoffs: " << this->p->asString(this->p->payoffs) << "\n";
 //			if (pverbose)
 //				cout
 //						<< "FinalState*********************************************************************************\n"
@@ -300,19 +314,24 @@ inline void HelloApplication::continuePlay() {
 		this->formattedState->setText(formattedState->text() + os.str());
 	} else {
 		int wt = current.getWhoseTurn();
-		if (this->vpt[wt] == P_RANDOM) {
-			int chosenMove = rand() % canDo.size();
-			makeMove(canDo[chosenMove]);
+		PlayerType currentPlayerType = this->vpt[wt];
+		if (currentPlayerType == P_RANDOM) {
+			int randomMoveIndex = rand() % canDo.size();
+			makeMove(canDo[randomMoveIndex]);
+		} else if (currentPlayerType != P_HUMAN) {
+			int chosenMove = GameModerator::chooseMove(currentPlayerType, this->p, canDo, wt, this->p->kb,
+					this->p->initialWorld, this->nSamples, this->nOppSamples);
+			assert(chosenMove != -1);
+			makeMove(chosenMove);
 		}
 	}
-
 }
 
 inline void HelloApplication::makeMove(int chosenAction) {
 	this->p->apply(chosenAction, current);
 	this->p->finalizeApply(current);
 	gameHistory.push_back(chosenAction);
-	//gameLogger.append(chosenAction);
+//gameLogger.append(chosenAction);
 	ActionGraph::fluentHistory.push_back(current.getFluents());
 	continuePlay();
 }
@@ -324,17 +343,17 @@ inline void HelloApplication::humanPlayMove() {
 		//int humanMove = atoi(humanMoveString.c_str());
 		int humanMove = options->currentIndex();
 		VecInt canDo = this->p->legalOperators(current);
-		cout << "HPM size: " << canDo.size() << " entered: "
-				<< humanMove << " index: " << canDo[humanMove] << " text:" << this->p->operatorIndexToString(canDo[humanMove]) << "\n";
+		cout << "HPM size: " << canDo.size() << " entered: " << humanMove << " index: " << canDo[humanMove] << " text:"
+				<< this->p->operatorIndexToString(canDo[humanMove]) << "\n";
 		if (humanMove < (int) canDo.size()) {
+			options->hide();
 			makeMove(canDo[humanMove]);
 
 		}
 	}
 }
 
-inline void HelloApplication::optionSelected()
-{
+inline void HelloApplication::optionSelected() {
 //	options->setCurrentIndex(2);
 //	const std::set<int>& selected = options->selectedIndexes();
 //	cout << "Selected " << selected.size() << ": ";
@@ -351,8 +370,7 @@ inline void HelloApplication::optionSelected()
 	}
 }
 
-inline void HelloApplication::populateRulesTab(const string & domain, const string & instance)
-{
+inline void HelloApplication::populateRulesTab(const string & domain, const string & instance) {
 	string domainLines = Utilities::file_as_string(domain);
 //	cout << domainLines << std::endl;
 	this->rules->setText(domainLines);
@@ -360,6 +378,4 @@ inline void HelloApplication::populateRulesTab(const string & domain, const stri
 	this->init->setText(initLines);
 
 }
-
-
 

@@ -6,6 +6,7 @@
 using std::cout;
 using std::endl;
 using std::ostringstream;
+using std::setw;
 
 namespace VAL {
 
@@ -20,6 +21,10 @@ WorldStateFormatter::~WorldStateFormatter() {
 void WorldStateFormatter::setProcessor(Processor* procIn) {
 	this->proc = procIn;
 	proc->setFormatter(this);
+}
+
+std::string WorldStateFormatter::actionString(int actionId) {
+	return proc->operatorIndexToString(actionId);
 }
 
 DefaultWorldStateFormatter::DefaultWorldStateFormatter() {
@@ -41,27 +46,75 @@ RackoWorldStateFormatter::~RackoWorldStateFormatter() {
 
 }
 
-std::string RackoWorldStateFormatter::asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb) {
+int getSlotArg(int arg, int slotsPerPlayer) {
+	int slotArg = arg;
+	if (slotArg > (int) (slotsPerPlayer)) {
+		slotArg -= (slotsPerPlayer + 1);
+	}
+	return slotArg;
+}
+
+std::string RackoWorldStateFormatter::asString(const VecInt & gameHistory, WorldState & ws, const VecVecVecKey & kb) {
 	ostringstream os;
 	// Number of slot objects is (# slots per player)*2 + 1.  (Extra 1 is "dealer").
 	// Integer division by two gives # slots per player.
-	unsigned slotCount = (unsigned) (proc->typeCardinalities[proc->typeNameIds["slot"]] / 2);
-	unsigned cardCount = (unsigned) (proc->typeCardinalities[proc->typeNameIds["card"]]);
-	os << "Racko World with " << slotCount << " slots and " << cardCount << " cards";
-	os << " head id for 'at': " << proc->predHeadTbl["at"];
-	int atIndex = proc->predHeadTbl["at"];
-	int topIndex = proc->predHeadTbl["top"];
+	//	unsigned slotCount = (unsigned) (proc->typeCardinalities[proc->typeNameIds["slot"]] / 2);
+	unsigned slotCount = proc->itemCount("slot");
+	unsigned slotsPerPlayer = (slotCount - 1) / 2; // Subtract 1 for dealer; half of remaining are opponent's slots
+	unsigned dealerSlotId = slotsPerPlayer; // Because slots are named d1 ... dn, dealer, u1, ... un; so dealer is in middle
+	unsigned cardCount = proc->itemCount("card");
+	//	os << "Racko World with " << slotCount << " slots and " << cardCount << " cards";
+	//	os << " head id for 'at': " << proc->predicateId("at");
+	int atIndex = proc->predicateId("at");
+	int topIndex = proc->predicateId("top");
 	VecInt args(2, 0);
 	int whoseTurn = ws.getWhoseTurn();
+	int minSlot = (whoseTurn == 2) ? 0 : dealerSlotId + 1;
+	int oppMinSlot = (whoseTurn == 1) ? 0 : dealerSlotId + 1;
+	os << "History\n";
+	for (unsigned m = slotCount + 1; m < gameHistory.size(); m++) {
+		string oName;
+		VecInt oArgs;
+		proc->decodeOperator(gameHistory[m], oName, oArgs);
+		if (oName == "swap-top") {
+			if (oArgs[0] != whoseTurn) {
+				os << "(Opponent) ";
+			}
+			int slotArg = getSlotArg(oArgs[3], slotsPerPlayer);
+			os << "Swapped " << (oArgs[2] + 1) << " for " << (oArgs[4] + 1) << " into " << (char) (('A' + (slotArg)))
+					<< "\n";
+		} else if (oName == "swap-drawn") {
+			if (oArgs[0] != whoseTurn) {
+				os << "(Opponent) ";
+			}
+			int slotArg = getSlotArg(oArgs[2], slotsPerPlayer);
+			os << "Swapped " << (oArgs[3] + 1) << " out of " << (char) (('A' + (slotArg))) << " for drawn ";
+			if (oArgs[0] == whoseTurn) {
+				os << (oArgs[4] + 1) << "\n";
+			} else {
+				os << "card\n";
+			}
+		} else if (oName == "pass") {
+			if (oArgs[0] != whoseTurn) {
+				os << "(Opponent) ";
+			}
+			os << "Discarded " << (oArgs[2] + 1) << "\n";
+		} else {
+			//			os << setw(3) << m << " " << oName << "\n";
+		}
+
+	}
+
+	os << "\n\n";
 	switch (whoseTurn) {
 	case 0: // chance
 		os << "Chance: ";
 		args[1] = slotCount; // This will be the slot 'dealer'
-		for (int c = 0; c < (int) (((cardCount))); c++) {
+		for (int c = 0; c < (int) (((((cardCount))))); c++) {
 			args[0] = c;
 			int index = ws.getIndex(args, atIndex);
 			if (ws.getTruthValue(index) == KNOWN_TRUE) {
-				os << " " << std::setw(2) << (c + 1); //" fact: "  << proc->getFact(index);
+				os << " " << std::setw(3) << (c + 1); //" fact: "  << proc->getFact(index);
 			}
 		}
 
@@ -69,17 +122,15 @@ std::string RackoWorldStateFormatter::asString(const VecInt& gameHistory, WorldS
 		break;
 	case 1:
 	case 2:
-		os << "Player " << whoseTurn << "\n";
-		int minSlot = (whoseTurn == 2) ? 0 : slotCount + 1;
-		int oppMinSlot = (whoseTurn == 1) ? 0 : slotCount + 1;
-		for (int s = minSlot; s < (int) ((((minSlot + slotCount)))); s++) {
-			os << "   " << (char) (((('A' + s - minSlot)))) << ": "; //" fact: "  << proc->getFact(index);
+		os << "Current Player " << whoseTurn << "\n";
+		for (int s = minSlot; s < (int) ((((((minSlot + slotsPerPlayer)))))); s++) {
+			os << "   " << (char) (((((('A' + s - minSlot)))))) << ": "; //" fact: "  << proc->getFact(index);
 			args[1] = s;
-			for (int c = 0; c < (int) (((cardCount))); c++) {
+			for (int c = 0; c < (int) (((((cardCount))))); c++) {
 				args[0] = c;
-				int index = ws.getIndex(args, 0);
+				int index = ws.getIndex(args, atIndex);
 				if (ws.getTruthValue(index) == KNOWN_TRUE) {
-					os << std::setw(2) << (c + 1); //" fact: "  << proc->getFact(index);
+					os << std::setw(3) << (c + 1); //" fact: "  << proc->getFact(index);
 				}
 			}
 
@@ -87,14 +138,14 @@ std::string RackoWorldStateFormatter::asString(const VecInt& gameHistory, WorldS
 		}
 
 		if (false)
-			for (int s = oppMinSlot; s < (int) ((((oppMinSlot + slotCount)))); s++) {
-				os << "   " << (char) (((('A' + s - oppMinSlot)))) << ": "; //" fact: "  << proc->getFact(index);
+			for (int s = oppMinSlot; s < (int) ((((((oppMinSlot + slotCount)))))); s++) {
+				os << "   " << (char) (((((('A' + s - oppMinSlot)))))) << ": "; //" fact: "  << proc->getFact(index);
 				args[1] = s;
-				for (int c = 0; c < (int) (((cardCount))); c++) {
+				for (int c = 0; c < (int) (((((cardCount))))); c++) {
 					args[0] = c;
-					int index = ws.getIndex(args, 0);
+					int index = ws.getIndex(args, atIndex);
 					if (ws.getTruthValue(index) == KNOWN_TRUE) {
-						os << std::setw(2) << (c + 1); //" fact: "  << proc->getFact(index);
+						os << std::setw(3) << (c + 1); //" fact: "  << proc->getFact(index);
 					}
 				}
 
@@ -104,11 +155,13 @@ std::string RackoWorldStateFormatter::asString(const VecInt& gameHistory, WorldS
 		os << "\n";
 		break;
 	}
+
 	for (unsigned c = 0; c < cardCount; c++) {
 		if (ws.getTruthValue(topIndex, c) == KNOWN_TRUE) {
 			os << "Top: " << (c + 1) << "\n";
 		}
 	}
+
 	int drawnIndex = proc->predHeadTbl["drawn"];
 	for (unsigned c = 0; c < cardCount; c++) {
 		for (unsigned ithDraw = 0; ithDraw < cardCount; ithDraw++) {
@@ -116,6 +169,35 @@ std::string RackoWorldStateFormatter::asString(const VecInt& gameHistory, WorldS
 				os << "Drawn: " << (c + 1) << "\n";
 			}
 		}
+
+	}
+
+	return os.str();
+}
+
+std::string RackoWorldStateFormatter::actionString(int actionId) {
+	unsigned slotCount = proc->itemCount("slot");
+	unsigned slotsPerPlayer = (slotCount - 1) / 2; // Subtract 1 for dealer; half of remaining are opponent's slots
+	unsigned dealerSlotId = slotsPerPlayer; // Because slots are named d1 ... dn, dealer, u1, ... un; so dealer is in middle
+
+	string oName;
+	VecInt oArgs;
+	std::ostringstream os;
+	proc->decodeOperator(actionId, oName, oArgs);
+
+
+	if (oName == "pass") {
+		os << "Discard";
+	} else if (oName == "choose-draw") {
+		os << "Draw";
+	} else if (oName == "swap-top") {
+		int slotArg = getSlotArg(oArgs[3],slotsPerPlayer);
+		os << (char)('A' + slotArg);
+	} else if (oName == "swap-drawn") {
+		int slotArg = getSlotArg(oArgs[2],slotsPerPlayer);
+		os << (char)('A' + slotArg);
+	} else {
+		os << proc->operatorIndexToString(actionId);
 	}
 	return os.str();
 }
@@ -126,15 +208,14 @@ BattleshipWorldStateFormatter::~BattleshipWorldStateFormatter() {
 BattleshipWorldStateFormatter::BattleshipWorldStateFormatter() {
 }
 
-std::string BattleshipWorldStateFormatter::asString(const VecInt& gameHistory, WorldState & ws,
-		const VecVecVecKey& kb) {
+std::string BattleshipWorldStateFormatter::asString(const VecInt & gameHistory, WorldState & ws,
+		const VecVecVecKey & kb) {
 	ostringstream os;
 	//os << "Battleship World with " << shipCount << " ships and " << gridPointsPerSide << " cards";
 	//os << " head id for 'at': " << proc->predHeadTbl["at"];
 	int occupiedIndex = proc->predHeadTbl["occupied"];
 	int guessedIndex = proc->predHeadTbl["guessed"];
 	unsigned gridPointsPerSide = proc->typeCardinalities[proc->typeNameIds["row"]];
-
 	//int atIndex = proc->predHeadTbl["at"];
 	VecInt args(2, 0);
 	int whoseTurn = ws.getWhoseTurn();
@@ -155,16 +236,16 @@ std::string BattleshipWorldStateFormatter::asString(const VecInt& gameHistory, W
 		occupiedPredicateArgs[0] = whoseTurn;
 		guessedPredicateArgs[0] = 3 - whoseTurn; // Opponent's id
 		for (unsigned r = 0; r < gridPointsPerSide; r++) {
-			occupiedPredicateArgs[2] = (int) ((r));
-			guessedPredicateArgs[2] = (int) ((r));
+			occupiedPredicateArgs[2] = (int) ((((r))));
+			guessedPredicateArgs[2] = (int) ((((r))));
 			for (unsigned c = 0; c < gridPointsPerSide; c++) {
-				occupiedPredicateArgs[1] = (int) ((c));
+				occupiedPredicateArgs[1] = (int) ((((c))));
 				occupiedFactIndex = proc->getIndex(occupiedPredicateArgs, occupiedIndex);
 				occupiedTruthValue = ws.getTruthValue(occupiedFactIndex);
-				guessedPredicateArgs[1] = (int) ((c));
+				guessedPredicateArgs[1] = (int) ((((c))));
 				guessedFactIndex = proc->getIndex(guessedPredicateArgs, guessedIndex);
 				guessedTruthValue = ws.getTruthValue(guessedFactIndex);
-				guessedPredicateArgs[1] = (int) ((c));
+				guessedPredicateArgs[1] = (int) ((((c))));
 				if (guessedTruthValue == KNOWN_TRUE) {
 					if (occupiedTruthValue == KNOWN_TRUE) {
 						os << "H";
@@ -190,16 +271,16 @@ std::string BattleshipWorldStateFormatter::asString(const VecInt& gameHistory, W
 		occupiedPredicateArgs[0] = 3 - whoseTurn;
 		guessedPredicateArgs[0] = whoseTurn; // Opponent's id
 		for (unsigned r = 0; r < gridPointsPerSide; r++) {
-			occupiedPredicateArgs[2] = (int) ((r));
-			guessedPredicateArgs[2] = (int) ((r));
+			occupiedPredicateArgs[2] = (int) ((((r))));
+			guessedPredicateArgs[2] = (int) ((((r))));
 			for (unsigned c = 0; c < gridPointsPerSide; c++) {
-				occupiedPredicateArgs[1] = (int) ((c));
+				occupiedPredicateArgs[1] = (int) ((((c))));
 				occupiedFactIndex = proc->getIndex(occupiedPredicateArgs, occupiedIndex);
 				occupiedTruthValue = ws.getTruthValue(occupiedFactIndex);
-				guessedPredicateArgs[1] = (int) ((c));
+				guessedPredicateArgs[1] = (int) ((((c))));
 				guessedFactIndex = proc->getIndex(guessedPredicateArgs, guessedIndex);
 				guessedTruthValue = ws.getTruthValue(guessedFactIndex);
-				guessedPredicateArgs[1] = (int) ((c));
+				guessedPredicateArgs[1] = (int) ((((c))));
 				if (guessedTruthValue == KNOWN_TRUE) {
 					if (occupiedTruthValue == KNOWN_TRUE) {
 						os << "H";
@@ -222,6 +303,24 @@ std::string BattleshipWorldStateFormatter::asString(const VecInt& gameHistory, W
 		break;
 	}
 
+	return os.str();
+}
+
+std::string BattleshipWorldStateFormatter::actionString(int actionId)
+{
+	std::ostringstream os;
+	string oName;
+	VecInt oArgs;
+	proc->decodeOperator(actionId, oName, oArgs);
+	if (oName == "shoot") {
+		os << "  Shoot " << (oArgs[2] + 1) << "," << (oArgs[3] + 1) << "  ";
+	} else if (oName.find("place-across") != std::string::npos) {
+		os << " Across " << (oArgs[5] + 1) << "," << (oArgs[4] + 1) << "  ";
+	} else if (oName.find("place-down") != std::string::npos) {
+		os << " Down " << (oArgs[4] + 1) << "," << (oArgs[5] + 1) << "  ";
+	} else {
+		os << proc->operatorIndexToString(actionId);
+	}
 	return os.str();
 }
 }
@@ -296,6 +395,22 @@ VAL::GopsWorldStateFormatter::GopsWorldStateFormatter() {
 VAL::GopsWorldStateFormatter::~GopsWorldStateFormatter() {
 }
 
+std::string VAL::GopsWorldStateFormatter::actionString(int actionId)
+{
+	string oName;
+	VecInt oArgs;
+	std::ostringstream os;
+	proc->decodeOperator(actionId, oName, oArgs);
+
+
+	if (oName == "bid1" || oName == "bid2") {
+		os << "  Bid " << (oArgs[0] + 1) << "  ";
+	} else {
+		os << proc->operatorIndexToString(actionId);
+	}
+	return os.str();
+}
+
 std::string VAL::GopsWorldStateFormatter::asString(const VecInt & gameHistory, WorldState & ws,
 		const VecVecVecKey & kb) {
 	ostringstream os;
@@ -303,7 +418,7 @@ std::string VAL::GopsWorldStateFormatter::asString(const VecInt & gameHistory, W
 	string oName;
 	VecInt oArgs;
 	int slotCount = proc->typeCardinalities[proc->typeNameIds["slot"]];
-	int biddingRoundCount = (slotCount - 1) / 3; // Subtract 1 for dealer, divide by 3 because for every bidding round, there
+	unsigned biddingRoundCount = (slotCount - 1) / 3; // Subtract 1 for dealer, divide by 3 because for every bidding round, there
 	// is the card to bid on plus one card per player to bid with
 	VecVecInt startingHands(3);
 	VecVecInt results(3);
@@ -338,36 +453,44 @@ std::string VAL::GopsWorldStateFormatter::asString(const VecInt & gameHistory, W
 		}
 	}
 
-	std::string labels[] = { "bids", "p1", "p2" };
-	for (unsigned i = 0; i < 3; i++) {
-		if (i > 0 && i != ws.getWhoseTurn()) continue; // Don't print the other guys cards
-		os << labels[i] << " ";
-		for (int j = 0; j < biddingRoundCount; j++) {
-			os << startingHands[i][j] << " ";
-		}
-		os << "\n";
-	}
+	std::string labels[] = { "won by", "p1 bid", "p2 bid" };
+//	for (unsigned i = 0; i < 3; i++) {
+//		if (i > 0 && i != ws.getWhoseTurn()) continue; // Don't print the other guys cards
+//		os << labels[i] << " ";
+//		for (int j = 0; j < biddingRoundCount; j++) {
+//			os << startingHands[i][j] << " ";
+//		}
+//		os << "\n";
+//	}
 
 	os << "\n";
-	labels[0] = "W ";
+	os << "card:   ";
+	for (int i = 0; i < biddingRoundId; i++) {
+		os << setw(2) << startingHands[0][i] << " ";
+	}
+	os << "\n";
+	//labels[0] = "W ";
 	for (unsigned i = 0; i < 3; i++) {
-		os << labels[i] << " ";
+		os << labels[i] << ": ";
 		for (int j = 0; j < biddingRoundId; j++) {
-			os << results[i][j] << " ";
+			os << setw(2) << results[i][j] << " ";
 		}
 		os << "\n";
 	}
 	os << "Currently bidding on: " << currentBiddable << "\n";
-//	int ownsIndex = proc->getPredId("owns");
-
-//	int cardCount = proc->typeCardinalities[proc->typeNameIds["card"]];
-//	int slotCount = proc->typeCardinalities[proc->typeNameIds["slot"]];
-
-//	VecInt cardRow(cardCount);
 	NumScalar p1Score = ws.getFluentValue(scoreIndex, 1);
 	NumScalar p2Score = ws.getFluentValue(scoreIndex, 2);
-	os << "Score 1: " << p1Score << " Score 2: " << p2Score << "\n";
-
+	switch (ws.getWhoseTurn()) {
+	case 0:
+		os << "Player 1 score: " << setw(2) << p1Score << "\nPlayer 2 score: " << setw(2) << p2Score << "\n";
+		break;
+	case 1:
+		os << "My score:       " << setw(2) << p1Score << "\nOpponent score: " << setw(2) << p2Score << "\n";
+		break;
+	case 2:
+		os << "Opponent Score: " << setw(2) << p1Score << "\nMy score:       " << setw(2) << p2Score << "\n";
+		break;
+	}
 	return os.str();
 }
 

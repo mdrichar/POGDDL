@@ -39,22 +39,28 @@ using namespace VAL;
  * A simple hello world application class which demonstrates how to react
  * to events, read input, and give feed-back.
  */
-class HelloApplication: public WApplication {
+class PoisomGui: public WApplication {
 public:
-	HelloApplication(const WEnvironment& env);
+	PoisomGui(const WEnvironment& env);
 
 private:
-	WLineEdit *moveChooser;
+	//WLineEdit *moveChooser;
 	WText *greeting_;
 	WTextArea *area_;
 	WComboBox* domain;
 	WComboBox* instance;
+	WComboBox* player0;
+	WComboBox* player1;
+	WComboBox* player2;
+	WLineEdit* playerId;
+	WLineEdit* randomSeedForGame;
 	WContainerWidget* selectors;
 	WContainerWidget* humanSelector;
 	WTabWidget* tabs;
+	WContainerWidget* setup;
 	WTextArea *rules; // Display the domain file for the game
 	WTextArea *init; // Display the initial conditions for the game
-	WTextArea *stateBits; // Display game state as 1s and 0s
+	WTextArea *rawState; // Display game state as 1s and 0s
 	WTextArea *formattedState; // Display game state in human readable format
 	WTextArea *history; // Display list of actions taken so far in the game
 	WSelectionBox *options; // Display legal moves
@@ -73,9 +79,11 @@ private:
 	int nSamples;
 	int nOppSamples;
 
-	void updateStateDescriptionWindows();
+	WComboBox* createPlayerComboBox();
+    void populateSetupTab();
+    void updateStateDescriptionWindows();
 	void addSelector();
-	void greet();
+//	void greet();
 	void startGame();
 	void continuePlay();
 	void makeMove(int move);
@@ -85,40 +93,106 @@ private:
 
 };
 
+WComboBox* PoisomGui::createPlayerComboBox()
+{
+    WComboBox* comboBox = new WComboBox();
+    comboBox->addItem("Random");
+    comboBox->addItem("Human");
+    comboBox->addItem("MCTS");
+    comboBox->addItem("Inference");
+    comboBox->addItem("Heuristic");
+    return comboBox;
+}
+
+void PoisomGui::populateSetupTab()
+{
+    //	root()->addWidget(new WText("Your name, please ? ")); // show some text
+    //moveChooser = new WLineEdit(); // allow text input
+    //	nameEdit_->setFocus(); // give focus
+    //
+    //	WPushButton *b = new WPushButton("Greet me.", root()); // create a button
+    //	b->setMargin(5, Left); // add 5 pixels margin
+    setup = new WContainerWidget();
+    setup->addWidget(new WBreak()); // insert a line break
+    setup->addWidget(new WBreak()); // insert a line break
+    setup->addWidget(new WText("Domain: "));
+//    selectors = new WContainerWidget(setup);
+    domain = new WComboBox();
+    domain->addItem("Battleship");
+    domain->addItem("Racko");
+    domain->addItem("End Game");
+    domain->changed().connect(this, &PoisomGui::addSelector);
+    setup->addWidget(domain);
+    setup->addWidget(new WBreak());
+    //domain->activated().connect(this, &HelloApplication::addSelector);
+    instance = new WComboBox();
+    setup->addWidget(new WText("Instance: "));
+    setup->addWidget(instance);
+    setup->addWidget(new WBreak());
+
+    setup->addWidget(new WText("Player 0: "));
+    this->player0 = createPlayerComboBox();
+    setup->addWidget(player0);
+    setup->addWidget(new WBreak());
+
+    setup->addWidget(new WText("Player 1: "));
+    this->player1 = createPlayerComboBox();
+    player1->setCurrentIndex(1);
+    setup->addWidget(player1);
+    setup->addWidget(new WBreak());
+
+    setup->addWidget(new WText("Player 2: "));
+    this->player2 = createPlayerComboBox();
+    player2->setCurrentIndex(2);
+    setup->addWidget(player2);
+    setup->addWidget(new WBreak());
+
+    setup->addWidget(new WText("Player ID: "));
+    this->playerId = new WLineEdit("12345");
+    setup->addWidget(playerId);
+    setup->addWidget(new WBreak());
+
+    setup->addWidget(new WText("Random Seed: "));
+    this->randomSeedForGame = new WLineEdit("12345");
+    setup->addWidget(randomSeedForGame);
+    setup->addWidget(new WBreak());
+
+
+    this->addSelector();
+
+    play = new WPushButton("Play", setup);
+    start = new WPushButton("Start", setup);
+    start->setFocus();
+
+}
+
 /*
  * The env argument contains information about the new session, and
  * the initial request. It must be passed to the WApplication
  * constructor so it is typically also an argument for your custom
  * application constructor.
  */
-HelloApplication::HelloApplication(const WEnvironment& env) :
+PoisomGui::PoisomGui(const WEnvironment& env) :
 		WApplication(env) {
 	setTitle("General Game Player"); // application title
-
+	WText* title = new WText("<center><h3>POISOM General Game Player</h3></center>");
+	root()->addWidget(title);
+	root()->addWidget(new WBreak());
 //	root()->addWidget(new WText("Your name, please ? ")); // show some text
-	moveChooser = new WLineEdit(root()); // allow text input
+	//moveChooser = new WLineEdit(); // allow text input
 //	nameEdit_->setFocus(); // give focus
 //
 //	WPushButton *b = new WPushButton("Greet me.", root()); // create a button
 //	b->setMargin(5, Left); // add 5 pixels margin
-	play = new WPushButton("Play", root());
-	start = new WPushButton("Start", root());
-	start->setFocus();
-
-	root()->addWidget(new WBreak()); // insert a line break
-
-	selectors = new WContainerWidget(root());
-	domain = new WComboBox(selectors);
-	domain->addItem("Battleship");
-	domain->addItem("Racko");
-	domain->addItem("End Game");
-	domain->changed().connect(this, &HelloApplication::addSelector);
-	//domain->activated().connect(this, &HelloApplication::addSelector);
-	instance = new WComboBox(selectors);
-	this->addSelector();
+    populateSetupTab();
 
 	root()->addWidget(new WBreak()); // insert a line break
 	tabs = new WTabWidget(root());
+
+
+
+
+
 	rules = new WTextArea();
 	rules->setColumns(100);
 	rules->setRows(45);
@@ -126,9 +200,9 @@ HelloApplication::HelloApplication(const WEnvironment& env) :
 	init->setColumns(100);
 	init->setRows(45);
 
-	stateBits = new WTextArea();
-	stateBits->setColumns(100);
-	stateBits->setRows(45);
+	rawState = new WTextArea();
+	rawState->setColumns(100);
+	rawState->setRows(45);
 	humanSelector = new WContainerWidget();
 	formattedState = new WTextArea(humanSelector);
 	formattedState->setColumns(100);
@@ -140,19 +214,20 @@ HelloApplication::HelloApplication(const WEnvironment& env) :
 	history->setColumns(100);
 	history->setRows(45);
 
+	tabs->addTab(setup, "Setup");
 	tabs->addTab(rules, "Rules");
 	tabs->addTab(init, "Initial State");
-	tabs->addTab(stateBits, "Bits");
+	tabs->addTab(rawState, "Raw State");
 	tabs->addTab(humanSelector, "Formatted State");
 	tabs->addTab(history, "Game History");
 	tabs->setStyleClass("tabwidget");
 	root()->addWidget(new WBreak()); // insert a line break
 
-	area_ = new WTextArea(root());
+//	area_ = new WTextArea(root());
 
-	root()->addWidget(new WBreak());
+//	root()->addWidget(new WBreak());
 
-	greeting_ = new WText(root()); // empty text
+//	greeting_ = new WText(root()); // empty text
 
 	/*
 	 * Connect signals with slots
@@ -160,21 +235,21 @@ HelloApplication::HelloApplication(const WEnvironment& env) :
 	 * - simple Wt-way
 	 */
 //	b->clicked().connect(this, &HelloApplication::greet);
-	start->clicked().connect(this, &HelloApplication::startGame);
-	play->clicked().connect(this, &HelloApplication::humanPlayMove);
-	options->clicked().connect(this, &HelloApplication::optionSelected);
+	start->clicked().connect(this, &PoisomGui::startGame);
+	play->clicked().connect(this, &PoisomGui::humanPlayMove);
+	options->clicked().connect(this, &PoisomGui::optionSelected);
 
 	/*
 	 * - using an arbitrary function object (binding values with boost::bind())
 	 */
-	moveChooser->enterPressed().connect(boost::bind(&HelloApplication::greet, this));
+	//moveChooser->enterPressed().connect(boost::bind(&HelloApplication::greet, this));
 
 	this->gameHistory.push_back(-1); // no action at t=0
 	nSamples = 50;
 	nOppSamples = 100;
 }
 
-void HelloApplication::addSelector() {
+void PoisomGui::addSelector() {
 	instance->clear();
 	if (domain->currentText() == "Battleship") {
 		instance->addItem("b11");
@@ -191,12 +266,21 @@ void HelloApplication::addSelector() {
 
 }
 
-void HelloApplication::startGame() {
+void PoisomGui::startGame() {
 	//Processor::checkPayoffs = false; glg.generateGames(string("../logs/EndGame/endgame"), string("../domains/EndGame.pog"), string("../problems/EndGame/endgame-1.pog"), 10);
 	glg.logString = "defaultLog";
-	std::string domain = "../domains/Gops.pog";
-	std::string instance = "../problems/Gops/gops-4.0.pog";
-	Processor::checkPayoffs = false;
+	std::string domain = "../domains/LongBattleship.pog";
+	std::string instance = "../problems/Battleship/battleship-2.4.pog";
+	Processor::checkPayoffs = true;
+
+//	std::string domain = "../domains/Gops.pog";
+//	std::string instance = "../problems/Gops/gops-4.0.pog";
+//	Processor::checkPayoffs = false;
+
+//	std::string domain = "../domains/Racko.pog";
+//	std::string instance = "../problems/Racko/racko-5.20.pog";
+//	Processor::checkPayoffs = true;
+
 	this->populateRulesTab(domain, instance);
 	analysis* an_analysis = GameParser::parseGame(domain, instance);
 
@@ -210,9 +294,9 @@ void HelloApplication::startGame() {
 	this->vpt = VecPlayerType(p->initialWorld.getNRoles());
 	//vpt[0] = P_HUMAN;
 	vpt[0] = P_RANDOM; // Chance player
-	vpt[1] = P_MCTS;
+	vpt[1] = P_HUMAN;
 	if (vpt.size() == 3) {
-		vpt[2] = P_HUMAN;
+		vpt[2] = P_RANDOM;
 	}
 	this->current = this->p->initialWorld;
 	ActionGraph::fluentHistory.resize(1);
@@ -227,20 +311,20 @@ void HelloApplication::startGame() {
 
 }
 
-void HelloApplication::greet() {
-	/*
-	 * Update the text, using text input into the moveChooser field.
-	 */
-	greeting_->setText("You have been greeted, " + moveChooser->text());
-	area_->setText(domain->currentText() + " " + instance->currentText());
-}
+//void HelloApplication::greet() {
+//	/*
+//	 * Update the text, using text input into the moveChooser field.
+//	 */
+//	//greeting_->setText("You have been greeted, " + moveChooser->text());
+//	area_->setText(domain->currentText() + " " + instance->currentText());
+//}
 
 WApplication *createApplication(const WEnvironment& env) {
 	/*
 	 * You could read information from the environment to decide whether
 	 * the user has permission to start a new application
 	 */
-	WApplication* app = new HelloApplication(env);
+	WApplication* app = new PoisomGui(env);
 	app->setCssTheme("polished");
 	app->useStyleSheet("style/everywidget.css");
 	app->useStyleSheet("style/combostyle.css");
@@ -264,28 +348,28 @@ int main(int argc, char **argv) {
 	return WRun(argc, argv, func);
 }
 
-void HelloApplication::updateStateDescriptionWindows() {
+void PoisomGui::updateStateDescriptionWindows() {
 	VecInt canDo = this->p->legalOperators(current);
 	options->clear();
 	for (unsigned i = 0; i < canDo.size(); i++) {
 		lastSelected = -1;
-		options->addItem(this->p->operatorIndexToString(canDo[i]));
+		options->addItem(this->p->getFormattedAction(canDo[i]));
 		int rowsToShow = std::min((unsigned) 20, canDo.size());
 		options->setVerticalSize(rowsToShow);
 		options->show();
 	}
 	string legalMoveString = this->p->getFormattedLegalMoves(canDo);
 	// update tabs
-	this->stateBits->setText(this->p->printState(current));
+	this->rawState->setText(this->p->printState(current) + " " + legalMoveString);
 //	std::cout << this->p->printState(current) << std::endl;
 	this->history->setText(this->p->getHistory(this->gameHistory));
 //	std::cout << this->p->getHistory(this->gameHistory) << std::endl;
 	this->formattedState->setText(
-			this->p->getFormattedState(this->gameHistory, current, this->p->kb) + " " + legalMoveString);
+			this->p->getFormattedState(this->gameHistory, current, this->p->kb));// + " " + legalMoveString);
 //	std::cout << "FormattedState: " << this->p->getFormattedState(this->gameHistory, current, this->p->kb) << std::endl;
 }
 
-inline void HelloApplication::continuePlay() {
+inline void PoisomGui::continuePlay() {
 	std::ostringstream os;
 	bool gameOver = false;
 	VecInt canDo = this->p->legalOperators(current);
@@ -299,6 +383,7 @@ inline void HelloApplication::continuePlay() {
 			// Game over; Display final info
 			os << "Game Over\n";
 			os << "Payoffs: " << this->p->asString(this->p->payoffs) << "\n";
+			os << this->p->winnerDeclarationString(this->p->payoffs) << "\n";
 //			if (pverbose)
 //				cout
 //						<< "FinalState*********************************************************************************\n"
@@ -327,7 +412,7 @@ inline void HelloApplication::continuePlay() {
 	}
 }
 
-inline void HelloApplication::makeMove(int chosenAction) {
+inline void PoisomGui::makeMove(int chosenAction) {
 	this->p->apply(chosenAction, current);
 	this->p->finalizeApply(current);
 	gameHistory.push_back(chosenAction);
@@ -336,7 +421,7 @@ inline void HelloApplication::makeMove(int chosenAction) {
 	continuePlay();
 }
 
-inline void HelloApplication::humanPlayMove() {
+inline void PoisomGui::humanPlayMove() {
 	int whoseTurn = this->current.getWhoseTurn();
 	if (vpt[whoseTurn] == P_HUMAN) {
 		//const string humanMoveString = this->moveChooser->text().narrow();
@@ -353,7 +438,7 @@ inline void HelloApplication::humanPlayMove() {
 	}
 }
 
-inline void HelloApplication::optionSelected() {
+inline void PoisomGui::optionSelected() {
 //	options->setCurrentIndex(2);
 //	const std::set<int>& selected = options->selectedIndexes();
 //	cout << "Selected " << selected.size() << ": ";
@@ -370,7 +455,7 @@ inline void HelloApplication::optionSelected() {
 	}
 }
 
-inline void HelloApplication::populateRulesTab(const string & domain, const string & instance) {
+inline void PoisomGui::populateRulesTab(const string & domain, const string & instance) {
 	string domainLines = Utilities::file_as_string(domain);
 //	cout << domainLines << std::endl;
 	this->rules->setText(domainLines);

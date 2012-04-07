@@ -32,6 +32,8 @@ public:
   StringToInt typeNameIds; // maps a string that names a type to an integer index (so that the type information can be looked up random access)
   VecStr typeIdNames;
   VecInt typeCardinalities; // typeCardinalties[i] = j means that the type with integer index i has j possible objects
+  unsigned itemCount(const string& name);
+  unsigned predicateId(const string& name);
 
 // Predicates
   bool isPredAlreadyPresent(const string& name);
@@ -117,6 +119,7 @@ public:
   static const StringToBoundsEntry getPredName(const StringToBounds& map, unsigned index);
   static void ensureCapacity(VecSetInt& vss, int neededIndex);
   static void add(VecSetInt& vss, int key, int value);
+  string winnerDeclarationString(const VecPayoff& payoffs) const;
   string asString(const VecInt& vi, ListType lt = NUMERIC);
   static string asString(const VecPayoff& vi);
   static string asString(const VecSetInt& vsi);
@@ -220,6 +223,7 @@ public:
   void setStaticEvaluationFunction(StaticEvaluationFunction* evaluator);
   NumScalar getEstimatedValue(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
   string getFormattedState(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
+  string getFormattedAction(int actionId);
 
   // history
   string getHistory(const VecInt& gameHistory);

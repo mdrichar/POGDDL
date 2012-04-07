@@ -17,6 +17,7 @@ public:
   virtual ~WorldStateFormatter();
   virtual void setProcessor(Processor* procIn);
   virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb) = 0;
+  virtual std::string actionString(int actionId);
 };
 
 class DefaultWorldStateFormatter : public WorldStateFormatter {
@@ -32,6 +33,7 @@ public:
   RackoWorldStateFormatter();
   virtual ~RackoWorldStateFormatter();
   virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
+  virtual std::string actionString(int actionId);
 
 };
 
@@ -41,7 +43,7 @@ public:
   BattleshipWorldStateFormatter();
   virtual ~BattleshipWorldStateFormatter();
   virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
-
+  virtual std::string actionString(int actionId);
 };
 
 class DifferenceWorldStateFormatter : public WorldStateFormatter {
@@ -68,6 +70,7 @@ public:
   GopsWorldStateFormatter();
   virtual ~GopsWorldStateFormatter();
   virtual std::string asString(const VecInt& gameHistory, WorldState& ws, const VecVecVecKey& kb);
+  virtual std::string actionString(int actionId);
 
 };
 

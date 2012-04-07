@@ -1118,7 +1118,7 @@ void ActionGraph::derivePreservation(unsigned t)
   WorldState& after = stages[t].partialWorld;
   ActionGraphStage& bStage = stages[t-1];
   ActionGraphStage& aStage = stages[t];
-  assert (before.maxPred = after.maxPred);
+  assert (before.maxPred == after.maxPred);
   for (unsigned f = 0; f < after.maxPred; f++) {
     if (after.getTruthValue(f) == UNKNOWN && before.getTruthValue(f) != UNKNOWN) {
       if ((before.getTruthValue(f) == KNOWN_TRUE) && aStage.postNeg.find(f) == aStage.postNeg.end()) {

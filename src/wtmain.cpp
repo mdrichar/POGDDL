@@ -58,15 +58,32 @@ private:
 	WContainerWidget* humanSelector;
 	WTabWidget* tabs;
 	WContainerWidget* setup;
+	WContainerWidget* replay;
 	WTextArea *rules; // Display the domain file for the game
 	WTextArea *init; // Display the initial conditions for the game
 	WTextArea *rawState; // Display game state as 1s and 0s
 	WTextArea *formattedState; // Display game state in human readable format
 	WTextArea *history; // Display list of actions taken so far in the game
+	WTextArea *replayArea;
 	WSelectionBox *options; // Display legal moves
 	WPushButton* play;
 	WPushButton* start;
+	WLineEdit* logFilenameWidget;
+
+	WPushButton* forward;
+	WPushButton* backward;
+	WText* replayIndexText;
+
 	VecNode actualNodes;
+
+	// Replay functionality
+	int replayIndex;
+	string replayFile;
+	int maxReplayIndexLimit;
+	WLineEdit* replayFileWidget;
+	WPushButton* loadReplayFileButton;
+	bool fileHasBeenLoaded;
+	VecInt replayHistory;
 
 	// To be encapsulated
 	GameLogGenerator glg;
@@ -78,91 +95,103 @@ private:
 	int lastSelected;
 	int nSamples;
 	int nOppSamples;
+	string domainFile;
+	string instanceFile;
+	string logFile;
 
 	WComboBox* createPlayerComboBox();
-    void populateSetupTab();
-    void updateStateDescriptionWindows();
+	void populateSetupTab();
+	void populateReplayTab();
+	void updateStateDescriptionWindows();
 	void addSelector();
 //	void greet();
 	void startGame();
+	void advanceReplay();
+	void loadReplayFile();
+	void rewindReplay();
 	void continuePlay();
 	void makeMove(int move);
 	void humanPlayMove();
 	void optionSelected();
 	void populateRulesTab(const string& domain, const string& instance);
+	void writeLog();
+	WorldState getNthPosition(Processor* p, unsigned n, const VecInt& history);
+	void displayNthPosition(unsigned n);
 
 };
 
-WComboBox* PoisomGui::createPlayerComboBox()
-{
-    WComboBox* comboBox = new WComboBox();
-    comboBox->addItem("Random");
-    comboBox->addItem("Human");
-    comboBox->addItem("MCTS");
-    comboBox->addItem("Inference");
-    comboBox->addItem("Heuristic");
-    return comboBox;
+WComboBox* PoisomGui::createPlayerComboBox() {
+	WComboBox* comboBox = new WComboBox();
+	comboBox->addItem("Random");
+	comboBox->addItem("Human");
+	comboBox->addItem("MCTS");
+	comboBox->addItem("Inference");
+	comboBox->addItem("Heuristic");
+	return comboBox;
 }
 
-void PoisomGui::populateSetupTab()
-{
-    //	root()->addWidget(new WText("Your name, please ? ")); // show some text
-    //moveChooser = new WLineEdit(); // allow text input
-    //	nameEdit_->setFocus(); // give focus
-    //
-    //	WPushButton *b = new WPushButton("Greet me.", root()); // create a button
-    //	b->setMargin(5, Left); // add 5 pixels margin
-    setup = new WContainerWidget();
-    setup->addWidget(new WBreak()); // insert a line break
-    setup->addWidget(new WBreak()); // insert a line break
-    setup->addWidget(new WText("Domain: "));
+void PoisomGui::populateSetupTab() {
+	//	root()->addWidget(new WText("Your name, please ? ")); // show some text
+	//moveChooser = new WLineEdit(); // allow text input
+	//	nameEdit_->setFocus(); // give focus
+	//
+	//	WPushButton *b = new WPushButton("Greet me.", root()); // create a button
+	//	b->setMargin(5, Left); // add 5 pixels margin
+	setup = new WContainerWidget();
+	setup->addWidget(new WBreak()); // insert a line break
+	setup->addWidget(new WBreak()); // insert a line break
+	setup->addWidget(new WText("Domain: "));
 //    selectors = new WContainerWidget(setup);
-    domain = new WComboBox();
-    domain->addItem("Battleship");
-    domain->addItem("Racko");
-    domain->addItem("End Game");
-    domain->changed().connect(this, &PoisomGui::addSelector);
-    setup->addWidget(domain);
-    setup->addWidget(new WBreak());
-    //domain->activated().connect(this, &HelloApplication::addSelector);
-    instance = new WComboBox();
-    setup->addWidget(new WText("Instance: "));
-    setup->addWidget(instance);
-    setup->addWidget(new WBreak());
+	domain = new WComboBox();
+	domain->addItem("Battleship");
+	domain->addItem("Racko");
+	domain->addItem("End Game");
+	domain->changed().connect(this, &PoisomGui::addSelector);
+	setup->addWidget(domain);
+	setup->addWidget(new WBreak());
+	//domain->activated().connect(this, &HelloApplication::addSelector);
+	instance = new WComboBox();
+	setup->addWidget(new WText("Instance: "));
+	setup->addWidget(instance);
+	setup->addWidget(new WBreak());
 
-    setup->addWidget(new WText("Player 0: "));
-    this->player0 = createPlayerComboBox();
-    setup->addWidget(player0);
-    setup->addWidget(new WBreak());
+	setup->addWidget(new WText("Player 0: "));
+	this->player0 = createPlayerComboBox();
+	setup->addWidget(player0);
+	setup->addWidget(new WBreak());
 
-    setup->addWidget(new WText("Player 1: "));
-    this->player1 = createPlayerComboBox();
-    player1->setCurrentIndex(1);
-    setup->addWidget(player1);
-    setup->addWidget(new WBreak());
+	setup->addWidget(new WText("Player 1: "));
+	this->player1 = createPlayerComboBox();
+	player1->setCurrentIndex(1);
+	setup->addWidget(player1);
+	setup->addWidget(new WBreak());
 
-    setup->addWidget(new WText("Player 2: "));
-    this->player2 = createPlayerComboBox();
-    player2->setCurrentIndex(2);
-    setup->addWidget(player2);
-    setup->addWidget(new WBreak());
+	setup->addWidget(new WText("Player 2: "));
+	this->player2 = createPlayerComboBox();
+	player2->setCurrentIndex(2);
+	setup->addWidget(player2);
+	setup->addWidget(new WBreak());
 
-    setup->addWidget(new WText("Player ID: "));
-    this->playerId = new WLineEdit("12345");
-    setup->addWidget(playerId);
-    setup->addWidget(new WBreak());
+	setup->addWidget(new WText("Player ID: "));
+	this->playerId = new WLineEdit("12345");
+	setup->addWidget(playerId);
+	setup->addWidget(new WBreak());
 
-    setup->addWidget(new WText("Random Seed: "));
-    this->randomSeedForGame = new WLineEdit("12345");
-    setup->addWidget(randomSeedForGame);
-    setup->addWidget(new WBreak());
+	setup->addWidget(new WText("Log file: "));
+	this->logFilenameWidget = new WLineEdit("logger");
+	setup->addWidget(logFilenameWidget);
+	setup->addWidget(new WBreak);
 
+	setup->addWidget(new WText("Random Seed: "));
+	this->randomSeedForGame = new WLineEdit("12345");
+	setup->addWidget(randomSeedForGame);
+	setup->addWidget(new WBreak());
 
-    this->addSelector();
+	this->addSelector();
 
-    play = new WPushButton("Play", setup);
-    start = new WPushButton("Start", setup);
-    start->setFocus();
+	play = new WPushButton("Play", setup);
+	start = new WPushButton("Start", setup);
+	start->setFocus();
 
 }
 
@@ -184,14 +213,11 @@ PoisomGui::PoisomGui(const WEnvironment& env) :
 //
 //	WPushButton *b = new WPushButton("Greet me.", root()); // create a button
 //	b->setMargin(5, Left); // add 5 pixels margin
-    populateSetupTab();
+	populateSetupTab();
+	populateReplayTab();
 
 	root()->addWidget(new WBreak()); // insert a line break
 	tabs = new WTabWidget(root());
-
-
-
-
 
 	rules = new WTextArea();
 	rules->setColumns(100);
@@ -220,6 +246,7 @@ PoisomGui::PoisomGui(const WEnvironment& env) :
 	tabs->addTab(rawState, "Raw State");
 	tabs->addTab(humanSelector, "Formatted State");
 	tabs->addTab(history, "Game History");
+	tabs->addTab(replay, "Replay");
 	tabs->setStyleClass("tabwidget");
 	root()->addWidget(new WBreak()); // insert a line break
 
@@ -237,13 +264,15 @@ PoisomGui::PoisomGui(const WEnvironment& env) :
 //	b->clicked().connect(this, &HelloApplication::greet);
 	start->clicked().connect(this, &PoisomGui::startGame);
 	play->clicked().connect(this, &PoisomGui::humanPlayMove);
+	forward->clicked().connect(this, &PoisomGui::advanceReplay);
+	backward->clicked().connect(this, &PoisomGui::rewindReplay);
+	loadReplayFileButton->clicked().connect(this, &PoisomGui::loadReplayFile);
 	options->clicked().connect(this, &PoisomGui::optionSelected);
 
 	/*
 	 * - using an arbitrary function object (binding values with boost::bind())
 	 */
 	//moveChooser->enterPressed().connect(boost::bind(&HelloApplication::greet, this));
-
 	this->gameHistory.push_back(-1); // no action at t=0
 	nSamples = 50;
 	nOppSamples = 100;
@@ -269,20 +298,20 @@ void PoisomGui::addSelector() {
 void PoisomGui::startGame() {
 	//Processor::checkPayoffs = false; glg.generateGames(string("../logs/EndGame/endgame"), string("../domains/EndGame.pog"), string("../problems/EndGame/endgame-1.pog"), 10);
 	glg.logString = "defaultLog";
-	std::string domain = "../domains/LongBattleship.pog";
-	std::string instance = "../problems/Battleship/battleship-2.4.pog";
+	domainFile = "../domains/LongBattleship.pog";
+	instanceFile = "../problems/Battleship/battleship-2.4.pog";
 	Processor::checkPayoffs = true;
 
-//	std::string domain = "../domains/Gops.pog";
-//	std::string instance = "../problems/Gops/gops-4.0.pog";
+//	domainFile = "../domains/Gops.pog";
+//	instanceFile = "../problems/Gops/gops-4.0.pog";
 //	Processor::checkPayoffs = false;
 
-//	std::string domain = "../domains/Racko.pog";
-//	std::string instance = "../problems/Racko/racko-5.20.pog";
+//	domainFile = "../domains/Racko.pog";
+//	instanceFile = "../problems/Racko/racko-5.20.pog";
 //	Processor::checkPayoffs = true;
 
-	this->populateRulesTab(domain, instance);
-	analysis* an_analysis = GameParser::parseGame(domain, instance);
+	this->populateRulesTab(domainFile, instanceFile);
+	analysis* an_analysis = GameParser::parseGame(domainFile, instanceFile);
 
 	this->p = new VAL::Processor(an_analysis);
 
@@ -364,12 +393,11 @@ void PoisomGui::updateStateDescriptionWindows() {
 //	std::cout << this->p->printState(current) << std::endl;
 	this->history->setText(this->p->getHistory(this->gameHistory));
 //	std::cout << this->p->getHistory(this->gameHistory) << std::endl;
-	this->formattedState->setText(
-			this->p->getFormattedState(this->gameHistory, current, this->p->kb));// + " " + legalMoveString);
+	this->formattedState->setText(this->p->getFormattedState(this->gameHistory, current, this->p->kb)); // + " " + legalMoveString);
 //	std::cout << "FormattedState: " << this->p->getFormattedState(this->gameHistory, current, this->p->kb) << std::endl;
 }
 
-inline void PoisomGui::continuePlay() {
+void PoisomGui::continuePlay() {
 	std::ostringstream os;
 	bool gameOver = false;
 	VecInt canDo = this->p->legalOperators(current);
@@ -384,6 +412,7 @@ inline void PoisomGui::continuePlay() {
 			os << "Game Over\n";
 			os << "Payoffs: " << this->p->asString(this->p->payoffs) << "\n";
 			os << this->p->winnerDeclarationString(this->p->payoffs) << "\n";
+			writeLog();
 //			if (pverbose)
 //				cout
 //						<< "FinalState*********************************************************************************\n"
@@ -412,7 +441,7 @@ inline void PoisomGui::continuePlay() {
 	}
 }
 
-inline void PoisomGui::makeMove(int chosenAction) {
+void PoisomGui::makeMove(int chosenAction) {
 	this->p->apply(chosenAction, current);
 	this->p->finalizeApply(current);
 	gameHistory.push_back(chosenAction);
@@ -421,7 +450,7 @@ inline void PoisomGui::makeMove(int chosenAction) {
 	continuePlay();
 }
 
-inline void PoisomGui::humanPlayMove() {
+void PoisomGui::humanPlayMove() {
 	int whoseTurn = this->current.getWhoseTurn();
 	if (vpt[whoseTurn] == P_HUMAN) {
 		//const string humanMoveString = this->moveChooser->text().narrow();
@@ -438,7 +467,7 @@ inline void PoisomGui::humanPlayMove() {
 	}
 }
 
-inline void PoisomGui::optionSelected() {
+void PoisomGui::optionSelected() {
 //	options->setCurrentIndex(2);
 //	const std::set<int>& selected = options->selectedIndexes();
 //	cout << "Selected " << selected.size() << ": ";
@@ -455,12 +484,123 @@ inline void PoisomGui::optionSelected() {
 	}
 }
 
-inline void PoisomGui::populateRulesTab(const string & domain, const string & instance) {
+string intToString(int x) {
+	std::ostringstream os;
+	os << x;
+	return os.str();
+}
+
+void PoisomGui::advanceReplay() {
+	if (this->fileHasBeenLoaded && replayIndex < maxReplayIndexLimit) {
+		replayIndex++;
+		string newText = intToString(replayIndex);
+		this->replayIndexText->setText(intToString(replayIndex));
+		displayNthPosition(replayIndex);
+	}
+}
+
+void PoisomGui::rewindReplay() {
+	if (this->fileHasBeenLoaded && replayIndex > 0) {
+		replayIndex--;
+		this->replayIndexText->setText(intToString(replayIndex));
+		displayNthPosition(replayIndex);
+	}
+
+}
+
+void PoisomGui::loadReplayFile() {
+	if (this->p == NULL) {
+		this->replayArea->setText("Null game");
+		return;
+	}
+	WString filenameWString = this->replayFileWidget->text();
+	string filenameString = filenameWString.narrow();
+	std::ifstream gameLogInFile(filenameString.c_str(), std::ios::in);
+	string oneGameString;
+	getline(gameLogInFile, oneGameString);
+	std::istringstream oneGameStream(oneGameString);
+	std::ostringstream os;
+	if (!oneGameStream.eof()) {
+		unsigned moveCount = 0;
+		oneGameStream >> moveCount;
+		if (moveCount > 0) {
+			this->maxReplayIndexLimit = moveCount;
+		}
+		this->replayHistory = VecInt(moveCount, -1);
+		for (unsigned i = 0; i < moveCount; i++) {
+			unsigned chosenAction;
+			oneGameStream >> chosenAction;
+			this->replayHistory[i] = (int) chosenAction;
+		}
+		for (unsigned j = 1; j < this->replayHistory.size(); j++) {
+			os << p->operatorIndexToString(this->replayHistory[j]) << "\n";
+		}
+	}
+	//this->replayArea->setText(os.str());
+	displayNthPosition(0);
+	this->fileHasBeenLoaded = true;
+}
+
+void PoisomGui::populateRulesTab(const string & domain, const string & instance) {
 	string domainLines = Utilities::file_as_string(domain);
 //	cout << domainLines << std::endl;
 	this->rules->setText(domainLines);
 	string initLines = Utilities::file_as_string(instance);
 	this->init->setText(initLines);
 
+}
+
+void PoisomGui::populateReplayTab() {
+	replayIndex = 0;
+	replay = new WContainerWidget;
+	this->replayFileWidget = new WLineEdit("logger", replay);
+	this->loadReplayFileButton = new WPushButton("Load", replay);
+	replay->addWidget(new WBreak);
+	backward = new WPushButton("<", replay);
+	replayIndexText = new WText("0", replay);
+	forward = new WPushButton(">", replay);
+	replay->addWidget(new WBreak);
+	this->fileHasBeenLoaded = false;
+
+	replayArea = new WTextArea(replay);
+	replayArea->setColumns(100);
+	replayArea->setRows(45);
+
+}
+
+void PoisomGui::writeLog() {
+	this->logFile = this->logFilenameWidget->text().narrow();
+	std::ofstream gameLogFile(logFile.c_str(), std::ios::out | std::ios::app);
+	gameLogFile << gameHistory.size() << " ";
+	copy(gameHistory.begin(), gameHistory.end(), std::ostream_iterator<unsigned>(gameLogFile, " "));
+	gameLogFile << "\n";
+	gameLogFile.close();
+}
+
+inline WorldState PoisomGui::getNthPosition(Processor *p, unsigned n, const VecInt & history) {
+	WorldState current = this->p->initialWorld;
+	ActionGraph::fluentHistory.resize(1);
+	VecVecVecKey obs = VecVecVecKey(p->initialWorld.getNRoles());
+	this->p->payoffs = VecPayoff(p->initialWorld.getNRoles());
+	this->p->kb = obs;
+	assert(history.size() > 0);
+	assert(n < history.size() - 1);
+	for (unsigned i = 1; i <= n; i++) {
+		this->p->apply(history[i], current);
+		this->p->finalizeApply(current);
+		ActionGraph::fluentHistory.push_back(current.getFluents());
+
+	}
+	return current;
+}
+
+inline void PoisomGui::displayNthPosition(unsigned n) {
+	WorldState current = getNthPosition(p, n, replayHistory);
+	std::ostringstream os;
+	os << this->p->getFormattedState(this->gameHistory, current, this->p->kb) << "\n";
+	if (n < replayHistory.size()) {
+		os << "Chosen move: " << p->getFormattedAction(replayHistory[n + 1]) << "\n";
+	}
+	replayArea->setText(os.str());
 }
 

@@ -8,7 +8,7 @@
 using std::ostringstream;
 using std::ostream_iterator;
 
-const bool agverbose = true;
+const bool agverbose = false;
 bool ActionGraph::externallySetSuperVerbose = false;
 
 // Potentially woefully inefficient

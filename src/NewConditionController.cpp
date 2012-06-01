@@ -7,7 +7,7 @@ using std::ostringstream;
 using std::ostringstream;
 
 const bool VERBOSE = false;
-const bool QVERBOSE = true;
+const bool QVERBOSE = false;
 
 namespace VAL {
 
@@ -241,8 +241,10 @@ void NewConditionController::visit_qfied_goal(qfied_goal* g) {
 			//g->getGoal()->write2(cout,0);
 			g->getGoal()->visit(this);
 			if ((this->truthValue == KNOWN_TRUE && qfier == E_EXISTS) || // Short circuit condition for "there exists" is true
-					(this->truthValue == KNOWN_FALSE && qfier == E_FORALL))
+					(this->truthValue == KNOWN_FALSE && qfier == E_FORALL)) {
+				//cout << "Short" << std::endl;
 				return; // short circuit condition for "forall" is false
+			}
 			if (this->truthValue == UNKNOWN) {
 				tmpTruthState = UNKNOWN;
 			}
@@ -254,16 +256,16 @@ void NewConditionController::visit_qfied_goal(qfied_goal* g) {
 		} else {
 			args[argMap[ptr]]++;
 			//params[varNames[ptr]] = args[ptr];
-			//if (passesQFiedScreeningChecks(g,argMap[ptr])) { //\TODO: Screening checks for quantified vars still need to be implemented -- more important for EXISTS than FORALL
-			++ptr;
-			//}
+			if (passesQFiedScreeningChecks(g,argMap[ptr])) { //\TODO: Screening checks for quantified vars still need to be implemented -- more important for EXISTS than FORALL
+			  ++ptr;
+			}
 		}
 	}
 	// If we get to this point, that means that we didn't short circuit.  If it's a FORALL expr, that means that none
 	// of the subgoals was false, so we want to return true.  If it's a EXISTS expr, that means none of the subgoals
 	// was true, so we want to return false;
 	this->truthValue = tmpTruthState; //(qfier == E_FORALL);
-	cout << "Result for quantified goal: " << this->truthValue << std::endl;
+	//cout << "Result for quantified goal: " << this->truthValue << std::endl;
 }
 
 // EFFECTS

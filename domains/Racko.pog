@@ -5,6 +5,7 @@
 	dealer - slot
 	chance p1 p2 - role
 	dealing dealtop randomdraw choosesrc drew - phase
+	u01 u02 u03 u04 - slot
 	all others u - other)
 	
 (:predicates
@@ -196,6 +197,63 @@
 					(at ?c2 ?s2)
 					(not (succeeds-c ?c2 ?c1)))))))
 
+;(:gain ?p - role 1
+;	(and
+;		(owns ?p u01)
+;		(not (inphase dealing))
+;		(exists (?c1 ?c2 ?c3 ?c4 - card)
+;			(and
+;				(at ?c1 u01)
+;				(at ?c2 u02)
+;				(at ?c3 u03)
+;				(at ?c4 u04)
+;				(successor ?c2 ?c1)
+;				(successor ?c3 ?c2)
+;				(successor ?c4 ?c3)
+;						))))
+
+;(:gain ?p - role 1
+;	(and
+;		(owns ?p u01)
+;		(not (inphase dealing))
+;		(not
+;			(exists (?c1 ?c2 - card)
+;				(and
+;					(successor-c ?c2 ?c1)
+;					(or
+;						(and
+;							(at ?c1 u01)
+;							(or 	
+;								(at ?c2 u02)
+;								(at ?c2 u03)
+;								(at ?c2 u04)))
+;						(and
+;							(at ?c1 u02)
+;							(or
+;								(at ?c2 u03)
+;								(at ?c2 u04)))
+;						(and
+;							(at ?c1 u03)
+;							(at ?c2 u04))))))))
+;
+;(:gain ?p - role 1
+;	(and
+;		(owns ?p u01)
+;		(not (inphase dealing))
+;		(exists (?c1 ?c2 - card)
+;			(and
+;				(at ?c1 u01)	
+;				(at ?c2 u02)	
+;				(succeeds-c ?c2 ?c1)
+;				(exists (?c3 - card)
+;					(and
+;						(at ?c3 u03)
+;						(succeeds-c ?c3 ?c2)
+;						(exists (?c4 - card)
+;							(and
+;								(at ?c4 u04)
+;								(succeeds-c ?c4 ?c3)))))))))
+;
 )
 
 

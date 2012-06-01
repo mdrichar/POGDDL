@@ -13,8 +13,8 @@ class WorldState
 {
 public:
   //static const int intsize = 22; // Game 14
-  static const int intsize = 905; // Game 14
-  //static const int intsize = 314; // Game 1
+  //static const int intsize = 905; // Game 14
+  static const int intsize = 73; // Game 1
   static int intLength(unsigned maxBit);
   static StringToInt predHeadTbl;
   static VecVecInt fastPredMults;

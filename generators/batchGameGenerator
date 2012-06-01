@@ -1,0 +1,19 @@
+#! /usr/bin/python
+import sys
+import os
+slotVariationsCount = int(sys.argv[1])
+cardVariationsCount = int(sys.argv[2])
+print slotVariationsCount, cardVariationsCount 
+minSlotCount = 1
+minCardCount = 3
+cardCountMultiple = 1
+for s in range(slotVariationsCount):
+    slotCount = s + minSlotCount
+    for c in range(cardVariationsCount):
+	cardCount = c * cardCountMultiple + minCardCount
+        #commandString = "./rackoGen " + str(slotCount) + " " + str(cardCount) + " > ../games2/Racko/racko-" + str(slotCount) + "." + str(cardCount) + ".pog"
+        commandString = "./battleGen " + str(slotCount) + " " + str(cardCount) + " > /home/mdrichar/git/POGDDL/problems/Battleship/battleship-" + str(slotCount) + "." + str(cardCount) + ".pog"
+        #commandString = "./gopsGen " + str(slotCount) + " " + str(cardCount) + " > ../games2/Gops/gops-" + str(slotCount) + "." + str(cardCount) + ".pog"
+	os.system(commandString)
+	print commandString
+  

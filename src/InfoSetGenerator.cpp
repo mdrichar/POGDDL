@@ -137,7 +137,7 @@ void InfoSetGenerator::displayPath(const VecInt& path) {
 }
 
 void InfoSetGenerator::processSolution(const ActionGraph& ag, SetVecInt& result) {
-	static const bool isgverbose = true;
+	static const bool isgverbose = false;
 	VecInt path = ag.extractPath();
 	if (verify(path, this->obs, this->k, this->initialWorld)) {
 		++PerformanceCounters::solutionCount;

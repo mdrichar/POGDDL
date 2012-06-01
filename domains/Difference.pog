@@ -23,6 +23,7 @@
 (:functions
 	(score ?p - role)
 	(value ?c - card)
+	(diff ?c1 ?c2 - card)
 )
 
 (:action draw 
@@ -67,10 +68,8 @@
 		(empty ?s)
 		(center ?c)
 		(observe (all (played ?p ?o ?s ?c ?q)))
-		(when (> (value ?c) (value ?q))
-			(increase (score ?p) (- (value ?c) (value ?q))))
-		(when (< (value ?c) (value ?q))
-			(increase (score ?p) (- (value ?q) (value ?c))))))
+		(increase (score ?p) (diff ?c ?q))))
+
 
 (:gain ?p - role 1
 	(and
@@ -80,5 +79,5 @@
 				(> (score p1) (score p2)))
 			(and
 				(not (first ?p))
-				(>  (score p2) (score p1)))))
+				(>=  (score p2) (score p1)))))
 ))

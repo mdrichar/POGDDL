@@ -109,8 +109,8 @@ void assignGame(int gameid, bool& alwaysCheckPayoffs, string& domainString, stri
 		problemString = "games/y1.pog";
 		break;
 	case 16:
-		domainString = "games/Gops.pog";
-		problemString = "games/g1.pog";
+		domainString = "../domains/Gops.pog";
+		problemString = "../problems/Gops/gops-4.0.pog";
 		break;
 	case 17:
 		domainString = "games/Kriegspiel.pog";
@@ -159,7 +159,7 @@ void assignGame(int gameid, bool& alwaysCheckPayoffs, string& domainString, stri
 		break;
 	case 25:
 		domainString = "../domains/Difference.pog";
-		problemString = "../problems/Difference/difference-1.pog";
+		problemString = "../problems/Difference/difference-9.pog";
 		alwaysCheckPayoffs = false;
 		break;
 	default:
@@ -326,6 +326,9 @@ int main(int argc, char * argv[]) {
 	formatter->setProcessor(&p);
 	StaticEvaluationFunction* evaluator = StaticEvaluationFunctionFactory::createEvaluator(&p);
 	evaluator->setProcessor(&p);
+	VecInt gameHistory(1,-1);
+	//Processor::checkPayoffs = false;
+	//GameModerator::mctsExplore(gameHistory,p.initialWorld,&p,1000);
 	VecPayoff payoffs = gm.playManyGames(&p, vpt, nGames, rank, size, nGamesPlayed, defaultGameLogger);
 	cout << "Totals: " << p.asString(payoffs) << "\n";
 	delete formatter;

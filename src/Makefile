@@ -27,11 +27,11 @@ CFLAGS  = ${DEPENDFLAGS}
 
 CXX      := g++
 #CXX	 := mpicxx -DMYMPI
-#CXXFLAGS  = ${DEPENDFLAGS} -ansi #-O3 -DNDEBUG #-pg -fprofile-arcs
+CXXFLAGS  = ${DEPENDFLAGS} -ansi -O3 -DNDEBUG #-pg -fprofile-arcs
 #CXXFLAGS  = ${DEPENDFLAGS} -ansi -O3 -pg -fprofile-arcs -ftest-coverage
 #CXXFLAGS  = ${DEPENDFLAGS} -ansi -g -pg -fprofile-arcs -ftest-coverage
 QTFLAGS = -D_REENTRANT -DQT_WEBKIT -DQT_NO_DEBUG -DQT_CORE_LIB -DQT_SHARED
-CXXFLAGS  = ${DEPENDFLAGS} -ansi -g 
+#CXXFLAGS  = ${DEPENDFLAGS} -ansi -g 
 WTLIBS +=  -L/usr/lib/i386-linux-gnu -lwt -lwthttp -lboost_signals -lQtCore -lpthread
 
 #CXXFLAGS  = ${DEPENDFLAGS} -ansi -O3 -DNDEBUG 

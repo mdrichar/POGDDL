@@ -1,7 +1,8 @@
 (define (problem racko5-20)
 (:domain racko)
 (:objects
-     u01 d01 u02 d02 u03 d03 u04 d04 u05 d05  - slot
+;     u01 d01 u02 d02 u03 d03 u04 d04 u05 d05  - slot
+      d01 d02 d03 d04 u05 d05  - slot
      c01 c02 c03 c04 c05 c06 c07 c08 c09 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20  - card)
 (:init
      (inphase dealing)

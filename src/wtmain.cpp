@@ -144,8 +144,8 @@ void PoisomGui::populateSetupTab() {
 //    selectors = new WContainerWidget(setup);
 	domain = new WComboBox();
 	domain->addItem("Battleship");
+	domain->addItem("Game of Pure Strategy");
 	domain->addItem("Racko");
-	domain->addItem("End Game");
 	domain->changed().connect(this, &PoisomGui::addSelector);
 	setup->addWidget(domain);
 	setup->addWidget(new WBreak());
@@ -204,9 +204,9 @@ void PoisomGui::populateSetupTab() {
 PoisomGui::PoisomGui(const WEnvironment& env) :
 		WApplication(env) {
 	setTitle("General Game Player"); // application title
-	WText* title = new WText("<center><h3>POISOM General Game Player</h3></center>");
-	root()->addWidget(title);
-	root()->addWidget(new WBreak());
+//	WText* title = new WText("<center><h3>POISOM General Game Player</h3></center>");
+//	root()->addWidget(title);
+//	root()->addWidget(new WBreak());
 //	root()->addWidget(new WText("Your name, please ? ")); // show some text
 	//moveChooser = new WLineEdit(); // allow text input
 //	nameEdit_->setFocus(); // give focus
@@ -232,7 +232,7 @@ PoisomGui::PoisomGui(const WEnvironment& env) :
 	humanSelector = new WContainerWidget();
 	formattedState = new WTextArea(humanSelector);
 	formattedState->setColumns(100);
-	formattedState->setRows(25);
+	formattedState->setRows(15);
 	humanSelector->addWidget(new WBreak());
 	options = new WSelectionBox(humanSelector);
 	options->setVerticalSize(20);
@@ -274,21 +274,20 @@ PoisomGui::PoisomGui(const WEnvironment& env) :
 	 */
 	//moveChooser->enterPressed().connect(boost::bind(&HelloApplication::greet, this));
 	this->gameHistory.push_back(-1); // no action at t=0
-	nSamples = 50;
-	nOppSamples = 100;
+
 }
 
 void PoisomGui::addSelector() {
 	instance->clear();
 	if (domain->currentText() == "Battleship") {
-		instance->addItem("b11");
-		instance->addItem("b12");
+		instance->addItem("battleship-2.4.pog");
+		//instance->addItem("b12");
+	} else if (domain->currentText() == "Game of Pure Strategy") {
+		instance->addItem("gops-4.0.pog");
+		//instance->addItem("r12");
 	} else if (domain->currentText() == "Racko") {
-		instance->addItem("r11");
-		instance->addItem("r12");
-	} else if (domain->currentText() == "End Game") {
-		instance->addItem("e11");
-		instance->addItem("e12");
+		instance->addItem("racko-5.20.pog");
+		//instance->addItem("e12");
 	} else {
 		instance->addItem("default");
 	}
@@ -298,17 +297,26 @@ void PoisomGui::addSelector() {
 void PoisomGui::startGame() {
 	//Processor::checkPayoffs = false; glg.generateGames(string("../logs/EndGame/endgame"), string("../domains/EndGame.pog"), string("../problems/EndGame/endgame-1.pog"), 10);
 	glg.logString = "defaultLog";
-	domainFile = "../domains/LongBattleship.pog";
-	instanceFile = "../problems/Battleship/battleship-2.4.pog";
-	Processor::checkPayoffs = true;
 
-//	domainFile = "../domains/Gops.pog";
-//	instanceFile = "../problems/Gops/gops-4.0.pog";
-//	Processor::checkPayoffs = false;
+	int gameIndex = this->domain->currentIndex();
+	switch (gameIndex) {
+	case 0:
+		domainFile = "../domains/LongBattleship.pog";
+		instanceFile = "../problems/Battleship/battleship-2.4.pog";
+		Processor::checkPayoffs = true;
+		break;
+	case 1:
+		domainFile = "../domains/Gops.pog";
+		instanceFile = "../problems/Gops/gops-4.0.pog";
+		Processor::checkPayoffs = false;
+		break;
+	case 2:
+		domainFile = "../domains/Racko.pog";
+		instanceFile = "../problems/Racko/racko-5.20.pog";
+		Processor::checkPayoffs = true;
+		break;
 
-//	domainFile = "../domains/Racko.pog";
-//	instanceFile = "../problems/Racko/racko-5.20.pog";
-//	Processor::checkPayoffs = true;
+	}
 
 	this->populateRulesTab(domainFile, instanceFile);
 	analysis* an_analysis = GameParser::parseGame(domainFile, instanceFile);
@@ -325,8 +333,16 @@ void PoisomGui::startGame() {
 	vpt[0] = P_RANDOM; // Chance player
 	vpt[1] = P_HUMAN;
 	if (vpt.size() == 3) {
-		vpt[2] = P_RANDOM;
+		vpt[2] = P_MCTS;
+		if (this->player2->currentIndex() == 0) {
+			vpt[2] = P_RANDOM;
+		}
 	}
+	GameModerator::manySamples = 10;
+	GameModerator::fewSamples = 10;
+	GameModerator::maxSize = 10;
+	nSamples = GameModerator::manySamples;
+	nOppSamples = GameModerator::fewSamples;
 	this->current = this->p->initialWorld;
 	ActionGraph::fluentHistory.resize(1);
 	this->playerObs = VecVecVecKey(p->initialWorld.getNRoles());
@@ -553,7 +569,7 @@ void PoisomGui::populateRulesTab(const string & domain, const string & instance)
 void PoisomGui::populateReplayTab() {
 	replayIndex = 0;
 	replay = new WContainerWidget;
-	this->replayFileWidget = new WLineEdit("logger", replay);
+	this->replayFileWidget = new WLineEdit("battleLog", replay);
 	this->loadReplayFileButton = new WPushButton("Load", replay);
 	replay->addWidget(new WBreak);
 	backward = new WPushButton("<", replay);

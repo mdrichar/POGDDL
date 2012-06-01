@@ -2,11 +2,12 @@
 #include "InfoSetGenerator.h"
 #include "NewConditionController.h"
 #include "Node.h"
+#include "PerformanceCounters.h"
 
 #include <cstdio>
 //#define INTERACTIVE
 
-const bool gmverbose = true;
+const bool gmverbose = false;
 const bool medverbose = false;
 const bool showApplying = true;
 unsigned GameModerator::maxSize = 30;
@@ -268,6 +269,7 @@ int GameModerator::chooseHumanMove(Processor *p, const VecInt & legalActions, Wo
 }
 
 VecFloat GameModerator::mctsExplore(const VecInt & seq, const WorldState & initState, Processor *p, int nSamples) {
+	PerformanceCounters::resetCounters();
 	if (gmverbose)
 		cout << "MCTS EXPLORE: " << nSamples << "\n";
 
@@ -302,7 +304,7 @@ VecFloat GameModerator::mctsExplore(const VecInt & seq, const WorldState & initS
 		// and some are not.
 	}
 	for (int s = 0; s < nSamples; s++) {
-		if (gmverbose || true)
+		if (gmverbose)
 			cout << "Sample #" << s << "\n";
 		// Should be able to delete this. If it wasn't terminal before, it shouldn't be now
 		if (root.terminal) {
@@ -317,6 +319,7 @@ VecFloat GameModerator::mctsExplore(const VecInt & seq, const WorldState & initS
 	for (unsigned a = 0; a < nOptions; a++) {
 		result[a] = root.children[a].valueEst;
 	}
+	//cout << "Calls to LegalOperators: " << PerformanceCounters::procLegalOperators << "\n";
 	return result;
 }
 

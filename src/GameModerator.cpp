@@ -9,7 +9,7 @@
 
 const bool gmverbose = false;
 const bool medverbose = false;
-const bool showApplying = true;
+const bool showApplying = false;
 unsigned GameModerator::maxSize = 30;
 unsigned augmentedRequest = 200;
 namespace VAL {
@@ -67,7 +67,7 @@ VecPayoff GameModerator::playGame(Processor* proc, const VecPlayerType& players,
 	if (seed) {
 		srand(seed);
 	}
-	static const bool pverbose = true;
+	static const bool pverbose = false;
 	WorldState current = proc->initialWorld;
 	if (pverbose)
 		cout << "Initial State*********************************************************************************\n"
@@ -333,7 +333,7 @@ VecVecFloat GameModerator::getDecisionMatrix(const SetVecInt & infoset, const Wo
 }
 
 int GameModerator::getDecisionFromMatrix(Processor* proc, const VecInt & legalOptions, const VecVecFloat & vvf, VecFloat & sums) {
-	static const bool decverbose = true || gmverbose;
+	static const bool decverbose = gmverbose;
 	//VecFloat sums(legalOptions.size(),0.0f);
 	for (unsigned a = 0; a < legalOptions.size(); a++) {
 		if (decverbose) {
